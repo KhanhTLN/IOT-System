@@ -30,8 +30,8 @@ Mô hình hệ thống tuân theo chuẩn kiến trúc IoT 4 cấp độ (Level 
 ```mermaid
 flowchart TD
     subgraph Local_Edge ["Tầng Cận Biên (Local Edge Node)"]
-        Cam["📸 Camera / Băng Chuyền"] --> CV["🧠 cv_detector.py (OpenCV HSV)"]
-        CV --> MQTT_Pub["📡 mqtt_publisher.py"]
+        Cam["📷 Camera / Băng Chuyền"] --> CV["🧠 cv_detector.py (OpenCV HSV)"]
+        CV --> MQTT_Pub["🚀 mqtt_publisher.py"]
     end
 
     subgraph Hardware_Simulation ["Tầng Chấp Hành (Wokwi / ESP32)"]
@@ -41,17 +41,17 @@ flowchart TD
 
     subgraph Cloud_Layer ["Tầng Đám Mây (Cloud Server)"]
         API["🚀 FastAPI Backend (/api/v1/logs)"]
-        DB[("🗄️ Database (PostgreSQL / SQLite)")]
+        DB[("💾 Database (PostgreSQL / SQLite)")]
         Analytics["📊 Analytics Engine (KPI / Anomaly)"]
         Dashboard["🖥️ Streamlit SCADA Dashboard"]
-        
+
         API --> DB
         API --> Analytics
         Dashboard <--> API
     end
 
-    MQTT_Pub -->|MQTT Publish: factory/servo/control| Broker
-    MQTT_Pub -->|HTTP POST /api/v1/logs| API
+    MQTT_Pub -- "MQTT Publish: factory/servo/control" --> Broker
+    MQTT_Pub -- "HTTP POST /api/v1/logs" --> API
 ```
 
 ---
