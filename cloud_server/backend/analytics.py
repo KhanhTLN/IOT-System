@@ -28,8 +28,8 @@ def calculate_stats(db: Session) -> Dict[str, Any]:
     for color in ["RED", "YELLOW", "GREEN"]:
         percentage[color] = round((color_counts[color] / total_count * 100), 2) if total_count > 0 else 0.0
 
-    # Năng suất sản phẩm / phút trong 10 phút gần nhất
-    now = datetime.datetime.utcnow()
+    # Năng suất sản phẩm / phút trong 10 phút gần nhất (GMT+7)
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
     ten_mins_ago = now - datetime.timedelta(minutes=10)
     recent_logs_count = db.query(SortingLog).filter(SortingLog.created_at >= ten_mins_ago).count()
     productivity_per_minute = round(recent_logs_count / 10.0, 2)
