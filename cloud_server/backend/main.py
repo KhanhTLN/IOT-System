@@ -4,7 +4,7 @@ import json
 import io
 import csv
 import threading
-from typing import List
+from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from schemas import (
     SortingLogCreate, SortingLogResponse,
     UserCreate, UserLogin, UserResponse, TokenResponse, ConfigUpdate
 )
-from analytics import calculate_stats
+from analytics import calculate_stats, calculate_servo_health, parse_datetime, apply_shift_filter
 from auth import (
     verify_password, get_password_hash, create_access_token,
     get_current_user, require_role
@@ -186,19 +186,58 @@ def create_sorting_log(log_data: SortingLogCreate, db: Session = Depends(get_db)
     return new_log
 
 @app.get("/api/v1/logs", response_model=List[SortingLogResponse])
-def get_sorting_logs(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+def get_sorting_logs(
+    limit: int = 50, 
+    offset: int = 0, 
+    color_label: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    shift: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
     """
-    Lấy danh sách các log phân loại mới nhất.
+    Lấy danh sách các log phân loại với bộ lọc tùy chọn (màu sắc, ngày giờ, ca làm việc).
     """
-    logs = db.query(SortingLog).order_by(SortingLog.id.desc()).offset(offset).limit(limit).all()
+    query = db.query(SortingLog)
+    
+    if color_label and color_label.upper() not in ["ALL", "TAT_CA", ""]:
+        query = query.filter(SortingLog.color_label == color_label.upper())
+    
+    dt_start = parse_datetime(start_time)
+    dt_end = parse_datetime(end_time)
+    if dt_start:
+        query = query.filter(SortingLog.created_at >= dt_start)
+    if dt_end:
+        query = query.filter(SortingLog.created_at <= dt_end)
+        
+    query = apply_shift_filter(query, shift)
+    
+    logs = query.order_by(SortingLog.id.desc()).offset(offset).limit(limit).all()
     return logs
 
 @app.get("/api/v1/stats")
-def get_sorting_stats(db: Session = Depends(get_db)):
+def get_sorting_stats(
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    shift: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
     """
-    Lấy dữ liệu thống kê tổng hợp (Số lượng từng màu, tỷ lệ %, năng suất, cảnh báo).
+    Lấy dữ liệu thống kê tổng hợp (Số lượng từng màu, tỷ lệ %, năng suất, cảnh báo) có hỗ trợ bộ lọc.
     """
-    return calculate_stats(db)
+    dt_start = parse_datetime(start_time)
+    dt_end = parse_datetime(end_time)
+    return calculate_stats(db, start_time=dt_start, end_time=dt_end, shift=shift)
+
+@app.get("/api/v1/analytics/servo-health")
+def get_servo_health(
+    max_rated_cycles: int = 10000,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy chỉ số phân tích vòng đời và mức độ hao mòn cơ cấu Servo SG90.
+    """
+    return calculate_servo_health(db, max_rated_cycles=max_rated_cycles)
 
 # --- EXPORT & CONFIG ROUTES (MANAGER ONLY) ---
 @app.get("/api/v1/export/csv")

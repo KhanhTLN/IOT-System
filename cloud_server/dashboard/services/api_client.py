@@ -35,19 +35,44 @@ def request_api(method: str, endpoint: str, json_data=None, params=None, use_aut
         print(f"[API Client Error] {method} {endpoint}: {e}")
         return None
 
-def fetch_stats():
-    """Lấy dữ liệu thống kê Level 4 từ Backend"""
-    res = request_api("GET", "/api/v1/stats", use_auth=False)
+def fetch_stats(start_time=None, end_time=None, shift=None):
+    """Lấy dữ liệu thống kê Level 4 từ Backend với bộ lọc tùy chọn"""
+    params = {}
+    if start_time:
+        params["start_time"] = str(start_time)
+    if end_time:
+        params["end_time"] = str(end_time)
+    if shift and shift not in ["ALL", "TAT_CA", ""]:
+        params["shift"] = str(shift)
+        
+    res = request_api("GET", "/api/v1/stats", params=params, use_auth=False)
     if res and res.status_code == 200:
         return res.json()
     return {}
 
-def fetch_logs(limit=50):
-    """Lấy danh sách lịch sử phân loại mới nhất"""
-    res = request_api("GET", f"/api/v1/logs?limit={limit}", use_auth=False)
+def fetch_logs(limit=50, offset=0, color_label=None, start_time=None, end_time=None, shift=None):
+    """Lấy danh sách lịch sử phân loại với bộ lọc màu sắc, thời gian và ca"""
+    params = {"limit": limit, "offset": offset}
+    if color_label and color_label not in ["ALL", "TAT_CA", ""]:
+        params["color_label"] = str(color_label)
+    if start_time:
+        params["start_time"] = str(start_time)
+    if end_time:
+        params["end_time"] = str(end_time)
+    if shift and shift not in ["ALL", "TAT_CA", ""]:
+        params["shift"] = str(shift)
+
+    res = request_api("GET", "/api/v1/logs", params=params, use_auth=False)
     if res and res.status_code == 200:
         return res.json()
     return []
+
+def fetch_servo_health(max_rated_cycles=10000):
+    """Lấy dữ liệu phân tích sức khỏe và vòng đời động cơ Servo SG90"""
+    res = request_api("GET", f"/api/v1/analytics/servo-health?max_rated_cycles={max_rated_cycles}", use_auth=False)
+    if res and res.status_code == 200:
+        return res.json()
+    return {}
 
 def fetch_configs():
     """Lấy cấu hình hệ thống (ngưỡng bất thường, góc servo)"""
