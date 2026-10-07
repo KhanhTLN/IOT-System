@@ -249,6 +249,59 @@ def inject_custom_styles():
             border-color: rgba(255, 255, 255, 0.2) !important;
         }
 
+        /* Industrial Minimalism & LED Indicators */
+        .section-header {
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #E2E8F0;
+            border-left: 3px solid #38BDF8;
+            padding-left: 10px;
+            margin: 18px 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .led-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .led-red { background-color: #F43F5E; box-shadow: 0 0 8px #F43F5E; }
+        .led-yellow { background-color: #F59E0B; box-shadow: 0 0 8px #F59E0B; }
+        .led-green { background-color: #10B981; box-shadow: 0 0 8px #10B981; }
+        .led-blue { background-color: #38BDF8; box-shadow: 0 0 8px #38BDF8; }
+        .led-gray { background-color: #64748B; }
+
+        .filter-panel-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-active-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            color: #94A3B8;
+            margin-top: 10px;
+        }
+        .filter-active-val {
+            color: #38BDF8;
+            font-weight: 600;
+        }
+
         /* Hide Streamlit Default Elements for a clean native look */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
