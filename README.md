@@ -112,18 +112,21 @@ iot-sorting-system/
    - Bảng `users`: quản lý tài khoản (`worker`, `manager`) với mật khẩu băm bcrypt.
 2. **Backend REST API (`main.py`):**
    - `POST /api/v1/logs`: Nhận dữ liệu phân loại từ Edge Node.
-   - `GET /api/v1/stats`: Trả về dữ liệu thống kê (tổng sản lượng, số lượng theo màu, tốc độ phân loại/phút).
+   - `GET /api/v1/logs`: Truy vấn lịch sử phân loại có bộ lọc đa năng (`color_label`, `start_time`, `end_time`, `shift`).
+   - `GET /api/v1/stats`: Thống kê tổng hợp số lượng, tỷ lệ %, năng suất có hỗ trợ lọc theo mốc thời gian/ca làm việc.
+   - `GET /api/v1/analytics/servo-health`: Đo lường vòng đời, tỷ lệ hao mòn (Wear %) và cân bằng tải động cơ Servo SG90.
    - `GET /api/v1/anomalies`: Phát hiện và cảnh báo chuỗi lỗi phân loại.
    - `GET /api/v1/export/csv`: Xuất dữ liệu nhật ký phân loại ra file CSV.
 3. **Analytics Engine (`analytics.py`):**
    - Thống kê phân bố tỷ lệ sản phẩm theo màu sắc.
-   - Tính toán năng suất phân loại theo thời gian thực (Rolling window).
+   - Tính toán năng suất phân loại theo thời gian thực (Rolling window) và theo 3 ca làm việc (Ca 1: 06h-14h, Ca 2: 14h-22h, Ca 3: 22h-06h).
    - Phát hiện bất thường khi một loại màu xuất hiện liên tục vượt ngưỡng cho phép.
+   - Phân tích chỉ số hao mòn cơ cấu cơ khí Servo SG90 (45°, 90°, 135°).
 4. **SCADA Dashboard (`app.py`):**
    - Xây dựng trên nền tảng **Streamlit** với ngôn ngữ thiết kế Dark Glassmorphism SCADA.
    - Phân quyền người dùng (Role-Based Access Control):
      - **Worker (Vận hành):** Giám sát trực tiếp các thẻ KPI neon, trạng thái cảnh báo, bảng log mới nhất với cơ chế tự làm mới độc lập `@st.fragment`.
-     - **Manager (Quản lý):** 4 Tab chuyên sâu: Giám sát thời gian thực, Phân tích biểu đồ xu hướng (Plotly), Cấu hình hệ thống & Xuất báo cáo, Quản lý tài khoản nhân viên.
+     - **Manager (Quản lý):** 4 Tab chuyên sâu: Giám sát thời gian thực, Phân tích biểu đồ xu hướng & sản lượng tích lũy (Cumulative Area Chart), Giám sát sức khỏe Servo, Bộ lọc ca sản xuất, Cấu hình hệ thống & Xuất báo cáo, Quản lý tài khoản nhân viên.
 5. **Docker Containerization (`docker-compose.yml`):**
    - Đóng gói toàn bộ các dịch vụ (PostgreSQL, Backend API, Streamlit Dashboard) để triển khai bằng 1 lệnh duy nhất.
 
@@ -147,22 +150,25 @@ iot-sorting-system/
      }
      ```
    - Gửi bản tin MQTT tới Topic `factory/servo/control` để kích hoạt cơ cấu gạt ESP32.
-   - Đồng thời gửi HTTP `POST /api/v1/logs` lên Cloud Backend để lưu trữ nhật ký.
+   - Đồng thời gửi HTTP `POST /api/v1/logs` lên Cloud Backend để lưu trữ nhật ký vào PostgreSQL.
 
 ---
 
-### Bước 3: Lập trình Giả lập phần cứng ESP32 & Servo (Wokwi)
+### Bước 3: Lập trình Giả lập phần cứng ESP32 & Servo (Wokwi & Local Mock)
 1. **Thiết lập sơ đồ Wokwi (`diagram.json`):**
    - 1 vi điều khiển ESP32 DevKit V1.
    - 1 động cơ Servo SG90 (Chân điều khiển PWM kết nối với GPIO 18, nguồn 5V và GND).
 2. **Firmware điều khiển (`main.ino`):**
    - Kết nối Wi-Fi Wokwi (`Wokwi-GUEST`).
-   - Kết nối tới MQTT Broker (HiveMQ / Mosquitto) và lắng nghe (Subscribe) topic `factory/servo/control`.
+   - Kết nối tới MQTT Broker (HiveMQ) và lắng nghe topic `factory/servo/control`.
    - **Quy tắc điều khiển góc quay:**
      - Nhận lệnh `"RED"` $\rightarrow$ Quay Servo về góc **$45^\circ$**
      - Nhận lệnh `"YELLOW"` $\rightarrow$ Quay Servo về góc **$90^\circ$**
      - Nhận lệnh `"GREEN"` $\rightarrow$ Quay Servo về góc **$135^\circ$**
      - Tự động quay về vị trí nghỉ ban đầu (**$0^\circ$**) sau 2 giây trễ.
+   - Tích hợp tính năng **Self-Test** tự kiểm tra Servo lúc khởi động.
+3. **Script Giả lập Terminal (`mock_esp32.py`):**
+   - Chạy trực tiếp trên máy tính để mô phỏng ESP32 nhận MQTT và in góc quay Servo mà không phụ thuộc trình duyệt.
 
 ---
 
@@ -172,17 +178,19 @@ iot-sorting-system/
 | Topic | Hướng truyền | Payload mẫu | Mục đích |
 | :--- | :--- | :--- | :--- |
 | `factory/servo/control` | Edge $\rightarrow$ ESP32 | `{"color": "RED"}` | Điều khiển góc quay động cơ gạt |
-| `factory/system/status` | ESP32 $\rightarrow$ Cloud/Edge | `{"status": "ONLINE"}` | Báo cáo trạng thái hoạt động vi điều khiển |
+| `factory/system/status` | ESP32/Edge $\rightarrow$ Cloud | `{"status": "ONLINE"}` | Báo cáo trạng thái hoạt động thiết bị |
 
 ### B. RESTful API Endpoints (Cloud Backend)
 | Phương thức | Endpoint | Phân quyền | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/login` | Public | Đăng nhập lấy JWT Bearer Token |
 | `POST` | `/api/v1/logs` | Public / Edge | Tiếp nhận log phân loại từ Camera Edge |
-| `GET` | `/api/v1/stats` | Worker, Manager | Thống kê số lượng theo màu, năng suất, tỷ lệ |
+| `GET` | `/api/v1/logs` | Public / Manager | Lấy danh sách log có bộ lọc màu, thời gian, ca làm việc |
+| `GET` | `/api/v1/stats` | Worker, Manager | Thống kê số lượng theo màu, năng suất có lọc theo ca |
+| `GET` | `/api/v1/analytics/servo-health` | Worker, Manager | Thống kê chu kỳ gạt và tỷ lệ hao mòn Servo SG90 |
 | `GET` | `/api/v1/anomalies` | Worker, Manager | Kiểm tra danh sách cảnh báo bất thường |
 | `GET` | `/api/v1/export/csv` | Manager | Tải file báo cáo phân loại dạng CSV |
-| `GET/PUT`| `/api/v1/config` | Manager | Xem và cập nhật tham số cấu hình hệ thống |
+| `GET/POST`| `/api/v1/config` | Manager | Xem và cập nhật tham số cấu hình hệ thống |
 
 ---
 

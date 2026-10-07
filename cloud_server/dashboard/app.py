@@ -17,7 +17,6 @@ from views.manager_view import render_manager_view
 # Cấu hình Trang Streamlit
 st.set_page_config(
     page_title="IoT Factory SCADA Dashboard",
-    page_icon="🏭",
     layout="wide",
     initial_sidebar_state="expanded"
 )
