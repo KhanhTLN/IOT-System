@@ -1,0 +1,4 @@
+# Wokwi Library Dependencies
+PubSubClient
+ESP32Servo
+ArduinoJson
