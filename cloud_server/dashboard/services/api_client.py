@@ -74,6 +74,44 @@ def fetch_servo_health(max_rated_cycles=10000):
         return res.json()
     return {}
 
+def fetch_oee_metrics(start_time=None, end_time=None, shift=None, ideal_run_rate=15.0):
+    """Lấy bộ chỉ số OEE công nghiệp (Overall Equipment Effectiveness = A x P x Q)"""
+    params = {"ideal_run_rate": ideal_run_rate}
+    if start_time:
+        params["start_time"] = str(start_time)
+    if end_time:
+        params["end_time"] = str(end_time)
+    if shift and shift not in ["ALL", "TAT_CA", ""]:
+        params["shift"] = str(shift)
+
+    res = request_api("GET", "/api/v1/analytics/oee", params=params, use_auth=False)
+    if res and res.status_code == 200:
+        return res.json()
+    return {}
+
+def fetch_target_vs_actual(target_shift=500, start_time=None, end_time=None, shift=None):
+    """Lấy dữ liệu đối chiếu tiến độ kế hoạch Target vs Actual & ETA"""
+    params = {"target_shift": target_shift}
+    if start_time:
+        params["start_time"] = str(start_time)
+    if end_time:
+        params["end_time"] = str(end_time)
+    if shift and shift not in ["ALL", "TAT_CA", ""]:
+        params["shift"] = str(shift)
+
+    res = request_api("GET", "/api/v1/analytics/target-vs-actual", params=params, use_auth=False)
+    if res and res.status_code == 200:
+        return res.json()
+    return {}
+
+def fetch_heatmap_matrix(days=7):
+    """Lấy ma trận nhiệt 24h x 7 ngày & 24h x 3 màu cho Heatmap"""
+    res = request_api("GET", f"/api/v1/analytics/heatmap-matrix?days={days}", use_auth=False)
+    if res and res.status_code == 200:
+        return res.json()
+    return {}
+
+
 def fetch_configs():
     """Lấy cấu hình hệ thống (ngưỡng bất thường, góc servo)"""
     res = request_api("GET", "/api/v1/config", use_auth=False)
