@@ -114,21 +114,25 @@ iot-sorting-system/
    - `POST /api/v1/logs`: Nhận dữ liệu phân loại từ Edge Node.
    - `GET /api/v1/logs`: Truy vấn lịch sử phân loại có bộ lọc đa năng (`color_label`, `start_time`, `end_time`, `shift`).
    - `GET /api/v1/stats`: Thống kê tổng hợp số lượng, tỷ lệ %, năng suất có hỗ trợ lọc theo mốc thời gian/ca làm việc.
+   - `GET /api/v1/analytics/oee`: Phân tích bộ chỉ số OEE công nghiệp ($OEE = A \times P \times Q$) kèm đánh giá phân cấp quốc tế.
+   - `GET /api/v1/analytics/target-vs-actual`: Đối chiếu tiến độ sản xuất Kế hoạch vs Thực tế và dự báo thời gian cán đích (ETA).
+   - `GET /api/v1/analytics/heatmap-matrix`: Cung cấp ma trận nhiệt 24h x 7 ngày & 24h x 3 màu nhận diện điểm nghẽn năng suất.
    - `GET /api/v1/analytics/servo-health`: Đo lường vòng đời, tỷ lệ hao mòn (Wear %) và cân bằng tải động cơ Servo SG90.
-   - `GET /api/v1/anomalies`: Phát hiện và cảnh báo chuỗi lỗi phân loại.
    - `GET /api/v1/export/csv`: Xuất dữ liệu nhật ký phân loại ra file CSV.
 3. **Analytics Engine (`analytics.py`):**
    - Thống kê phân bố tỷ lệ sản phẩm theo màu sắc.
-   - Tính toán năng suất phân loại theo thời gian thực (Rolling window) và theo 3 ca làm việc (Ca 1: 06h-14h, Ca 2: 14h-22h, Ca 3: 22h-06h).
-   - Phát hiện bất thường khi một loại màu xuất hiện liên tục vượt ngưỡng cho phép.
+   - Đo lường chỉ số **OEE công nghiệp (Overall Equipment Effectiveness)**: Tính sẵn sàng ($A$), Hiệu suất vận hành ($P$), Chất lượng nhận diện ($Q$).
+   - Giám sát tiến độ **Target vs Actual** & phân bổ kế hoạch theo từng màu sắc.
+   - Sinh ma trận phân bổ nhiệt năng suất 24H (**24-Hour Productivity Heatmap Matrix**).
    - Phân tích chỉ số hao mòn cơ cấu cơ khí Servo SG90 (45°, 90°, 135°).
 4. **SCADA Dashboard (`app.py`):**
-   - Xây dựng trên nền tảng **Streamlit** với ngôn ngữ thiết kế Dark Glassmorphism SCADA.
+   - Xây dựng trên nền tảng **Streamlit** với ngôn ngữ thiết kế **Industrial Dark SCADA & Minimalism** (không emoji gây rối mắt, dùng typography và LED dots).
    - Phân quyền người dùng (Role-Based Access Control):
-     - **Worker (Vận hành):** Giám sát trực tiếp các thẻ KPI neon, trạng thái cảnh báo, bảng log mới nhất với cơ chế tự làm mới độc lập `@st.fragment`.
-     - **Manager (Quản lý):** 4 Tab chuyên sâu: Giám sát thời gian thực, Phân tích biểu đồ xu hướng & sản lượng tích lũy (Cumulative Area Chart), Giám sát sức khỏe Servo, Bộ lọc ca sản xuất, Cấu hình hệ thống & Xuất báo cáo, Quản lý tài khoản nhân viên.
+     - **Worker (Vận hành):** Giám sát trực tiếp các thẻ KPI, trạng thái cảnh báo, bảng log mới nhất với cơ chế tự làm mới độc lập `@st.fragment`.
+     - **Manager (Quản lý):** 4 Tab chuyên sâu: Giám sát thời gian thực, Phân tích OEE Gauge & Tiến độ kế hoạch Target vs Actual, Ma trận nhiệt Heatmap 24h, Diễn biến xu hướng & sản lượng tích lũy (Cumulative Area Chart), Giám sát sức khỏe Servo, Bộ lọc ca sản xuất, Cấu hình hệ thống & Xuất báo cáo, Quản lý tài khoản nhân viên.
 5. **Docker Containerization (`docker-compose.yml`):**
    - Đóng gói toàn bộ các dịch vụ (PostgreSQL, Backend API, Streamlit Dashboard) để triển khai bằng 1 lệnh duy nhất.
+
 
 ---
 
@@ -187,10 +191,13 @@ iot-sorting-system/
 | `POST` | `/api/v1/logs` | Public / Edge | Tiếp nhận log phân loại từ Camera Edge |
 | `GET` | `/api/v1/logs` | Public / Manager | Lấy danh sách log có bộ lọc màu, thời gian, ca làm việc |
 | `GET` | `/api/v1/stats` | Worker, Manager | Thống kê số lượng theo màu, năng suất có lọc theo ca |
+| `GET` | `/api/v1/analytics/oee` | Worker, Manager | Phân tích bộ chỉ số OEE công nghiệp ($A \times P \times Q$) |
+| `GET` | `/api/v1/analytics/target-vs-actual` | Worker, Manager | Đối chiếu tiến độ Kế hoạch vs Thực tế & dự báo ETA |
+| `GET` | `/api/v1/analytics/heatmap-matrix` | Worker, Manager | Ma trận phân bổ nhiệt năng suất 24h x 7 ngày & 24h x 3 màu |
 | `GET` | `/api/v1/analytics/servo-health` | Worker, Manager | Thống kê chu kỳ gạt và tỷ lệ hao mòn Servo SG90 |
-| `GET` | `/api/v1/anomalies` | Worker, Manager | Kiểm tra danh sách cảnh báo bất thường |
 | `GET` | `/api/v1/export/csv` | Manager | Tải file báo cáo phân loại dạng CSV |
-| `GET/POST`| `/api/v1/config` | Manager | Xem và cập nhật tham số cấu hình hệ thống |
+| `GET/POST`| `/api/v1/config` | Manager | Xem và cập nhật tham số cấu hình hệ thống & định mức |
+
 
 ---
 

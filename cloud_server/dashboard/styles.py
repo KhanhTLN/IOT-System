@@ -302,8 +302,168 @@ def inject_custom_styles():
             font-weight: 600;
         }
 
+        /* OEE & Target SCADA Cards */
+        .oee-metric-card {
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            height: 100%;
+            transition: border-color 0.2s ease;
+        }
+        .oee-metric-card:hover {
+            border-color: rgba(56, 189, 248, 0.35);
+        }
+        .oee-badge-world-class {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .oee-badge-typical {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #FBBF24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .oee-badge-unacceptable {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #F87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .target-metric-box {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+
+        /* Circular Info Button (i) for Popovers - Clean 100% Circle without Chevrons */
+        div[data-testid="stPopover"],
+        [data-testid="stPopover"],
+        [data-testid="stPopoverButton"] {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            width: auto !important;
+        }
+
+        /* Target Popover Button at ANY DOM Depth */
+        div[data-testid="stPopover"] button,
+        [data-testid="stPopover"] button,
+        [data-testid="stPopoverButton"] button,
+        button[aria-haspopup="dialog"] {
+            border-radius: 50% !important;
+            -webkit-border-radius: 50% !important;
+            width: 24px !important;
+            height: 24px !important;
+            min-width: 24px !important;
+            min-height: 24px !important;
+            max-width: 24px !important;
+            max-height: 24px !important;
+            aspect-ratio: 1 / 1 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            margin-top: 10px !important;
+            font-size: 0.8rem !important;
+            font-weight: 700 !important;
+            font-family: 'Outfit', sans-serif !important;
+            background: rgba(30, 41, 59, 0.95) !important;
+            border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
+            color: #38BDF8 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            cursor: pointer !important;
+            overflow: hidden !important;
+        }
+
+        /* Ẩn triệt để icon mũi tên/chevron xuống (chữ v) của Streamlit Popover ở mọi cấp */
+        div[data-testid="stPopover"] button svg,
+        [data-testid="stPopover"] button svg,
+        button[aria-haspopup="dialog"] svg,
+        div[data-testid="stPopover"] button [data-testid="stIconMaterial"],
+        [data-testid="stPopover"] button [data-testid="stIconMaterial"],
+        div[data-testid="stPopover"] button [data-testid="stPopoverChevron"],
+        [data-testid="stPopover"] button [data-testid="stPopoverChevron"],
+        div[data-testid="stPopover"] button span:has(svg),
+        [data-testid="stPopover"] button span:has(svg),
+        [data-testid="stPopover"] button > span:nth-child(2),
+        [data-testid="stPopover"] button > *:not([data-testid="stMarkdownContainer"]):not(:first-child) {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            pointer-events: none !important;
+        }
+
+        /* Canh giữa hoàn hảo chữ i */
+        div[data-testid="stPopover"] button p,
+        [data-testid="stPopover"] button p,
+        div[data-testid="stPopover"] button [data-testid="stMarkdownContainer"],
+        [data-testid="stPopover"] button [data-testid="stMarkdownContainer"] {
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 0.82rem !important;
+            font-weight: 800 !important;
+            font-style: normal !important;
+            color: #38BDF8 !important;
+            line-height: 1 !important;
+            text-align: center !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        div[data-testid="stPopover"] button:hover,
+        [data-testid="stPopover"] button:hover,
+        button[aria-haspopup="dialog"]:hover {
+            background: rgba(56, 189, 248, 0.25) !important;
+            border-color: #38BDF8 !important;
+            transform: scale(1.15) !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.6) !important;
+            color: #FFFFFF !important;
+        }
+
+        div[data-testid="stPopoverBody"],
+        [data-testid="stPopoverBody"] {
+            background: rgba(15, 23, 42, 0.98) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border: 1px solid rgba(56, 189, 248, 0.35) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75) !important;
+            padding: 16px 20px !important;
+            max-width: 480px !important;
+        }
+
         /* Hide Streamlit Default Elements for a clean native look */
         #MainMenu {visibility: hidden;}
+
         footer {visibility: hidden;}
         header {visibility: hidden;}
 
