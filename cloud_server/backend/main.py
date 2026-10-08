@@ -3,9 +3,10 @@ import sys
 import json
 import io
 import csv
+import datetime
 import threading
 from typing import List, Optional
-from fastapi import FastAPI, Depends, HTTPException, status, Response
+from fastapi import FastAPI, Depends, HTTPException, status, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -23,6 +24,7 @@ from analytics import (
     calculate_oee_metrics, calculate_target_vs_actual, calculate_hourly_heatmap_matrix,
     parse_datetime, apply_shift_filter
 )
+from report_generator import generate_excel_report
 from auth import (
     verify_password, get_password_hash, create_access_token,
     get_current_user, require_role
@@ -294,33 +296,90 @@ def get_heatmap_matrix_analytics(
 
 
 # --- EXPORT & CONFIG ROUTES (MANAGER ONLY) ---
-@app.get("/api/v1/export/csv")
-def export_logs_csv(
+@app.get("/api/v1/export/excel")
+def export_logs_excel(
+    start_time: Optional[str] = Query(None, description="Thời gian bắt đầu (YYYY-MM-DD HH:MM:SS)"),
+    end_time: Optional[str] = Query(None, description="Thời gian kết thúc (YYYY-MM-DD HH:MM:SS)"),
+    shift: Optional[str] = Query(None, description="Ca làm việc (SHIFT_1, SHIFT_2, SHIFT_3)"),
+    color_label: Optional[str] = Query(None, description="Màu phân loại (RED, YELLOW, GREEN)"),
+    target_shift: int = Query(500, description="Định mức kế hoạch sản lượng ca"),
+    ideal_run_rate: float = Query(15.0, description="Tốc độ thiết kế định mức SP/phút"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(["MANAGER"]))
 ):
     """
-    Xuất file CSV toàn bộ lịch sử phân loại (Chỉ MANAGER).
+    Xuất báo cáo Excel đa Sheet (.xlsx) chuẩn SCADA:
+    - Sheet 1: Executive Summary (KPI, OEE, Target vs Actual, Servo Health)
+    - Sheet 2: Shift & Hourly Analysis (Phân bổ 24h và 3 Ca)
+    - Sheet 3: Raw Logs (Nhật ký phân loại chi tiết)
     """
-    logs = db.query(SortingLog).order_by(SortingLog.id.asc()).all()
+    excel_stream = generate_excel_report(
+        db=db,
+        start_time_str=start_time,
+        end_time_str=end_time,
+        shift=shift,
+        color_label=color_label,
+        target_shift=target_shift,
+        ideal_run_rate=ideal_run_rate,
+        user_name=current_user.full_name or current_user.username
+    )
+    
+    filename = f"scada_sorting_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return Response(
+        content=excel_stream.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@app.get("/api/v1/export/csv")
+def export_logs_csv(
+    start_time: Optional[str] = Query(None, description="Thời gian bắt đầu"),
+    end_time: Optional[str] = Query(None, description="Thời gian kết thúc"),
+    shift: Optional[str] = Query(None, description="Ca làm việc"),
+    color_label: Optional[str] = Query(None, description="Màu phân loại"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["MANAGER"]))
+):
+    """
+    Xuất file CSV nhật ký phân loại kèm UTF-8 BOM hiển thị chuẩn tiếng Việt trên Excel.
+    """
+    start_dt = parse_datetime(start_time)
+    end_dt = parse_datetime(end_time)
+
+    query = db.query(SortingLog)
+    if start_dt:
+        query = query.filter(SortingLog.created_at >= start_dt)
+    if end_dt:
+        query = query.filter(SortingLog.created_at <= end_dt)
+    query = apply_shift_filter(query, shift)
+    if color_label and color_label.upper() in ["RED", "YELLOW", "GREEN"]:
+        query = query.filter(SortingLog.color_label == color_label.upper())
+
+    logs = query.order_by(SortingLog.id.asc()).all()
     
     output = io.StringIO()
+    # Ghi UTF-8 BOM để Excel hiển thị tiếng Việt có dấu không bị lỗi font
+    output.write('\ufeff')
     writer = csv.writer(output)
-    writer.writerow(["ID", "Nhan Mau", "Do Tin Cay", "Thoi Gian"])
+    writer.writerow(["Mã Bản Ghi (ID)", "Nhãn Màu", "Góc Gạt Servo", "Độ Tin Cậy AI (%)", "Thời Gian Ghi Nhận (GMT+7)"])
     
+    angle_map = {"RED": "45°", "YELLOW": "90°", "GREEN": "135°"}
     for log in logs:
+        lbl = log.color_label.upper()
         writer.writerow([
             log.id, 
-            log.color_label, 
-            log.confidence, 
+            lbl,
+            angle_map.get(lbl, "-"),
+            f"{(log.confidence * 100):.1f}%" if log.confidence else "100.0%", 
             log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
         ])
     
     output.seek(0)
+    filename = f"scada_logs_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return Response(
-        content=output.getvalue(),
+        content=output.getvalue().encode('utf-8-sig'),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=sorting_logs_report.csv"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 @app.post("/api/v1/config")
