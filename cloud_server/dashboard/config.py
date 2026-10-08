@@ -2,43 +2,54 @@ import os
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
-# Định nghĩa bảng màu công nghiệp chuẩn nhận diện 3 thùng phân loại
+# Định nghĩa bảng màu công nghiệp chuẩn nhận diện 3 thùng phân loại (Desaturated Industrial SCADA)
 COLOR_PALETTE = {
     "RED": {
         "name": "Đỏ (RED)",
-        "hex": "#F43F5E",
-        "glow": "rgba(244, 63, 94, 0.25)",
-        "bg": "rgba(244, 63, 94, 0.12)",
+        "hex": "#FB7185",
+        "glow": "rgba(251, 113, 133, 0.25)",
+        "bg": "rgba(251, 113, 133, 0.12)",
         "border": "#FB7185",
         "badge": "🔴 ĐỎ"
     },
     "YELLOW": {
         "name": "Vàng (YELLOW)",
-        "hex": "#F59E0B",
-        "glow": "rgba(245, 158, 11, 0.25)",
-        "bg": "rgba(245, 158, 11, 0.12)",
+        "hex": "#FBBF24",
+        "glow": "rgba(251, 191, 36, 0.25)",
+        "bg": "rgba(251, 191, 36, 0.12)",
         "border": "#FBBF24",
         "badge": "🟡 VÀNG"
     },
     "GREEN": {
         "name": "Xanh (GREEN)",
-        "hex": "#10B981",
-        "glow": "rgba(16, 185, 129, 0.25)",
-        "bg": "rgba(16, 185, 129, 0.12)",
+        "hex": "#34D399",
+        "glow": "rgba(52, 211, 153, 0.25)",
+        "bg": "rgba(52, 211, 153, 0.12)",
         "border": "#34D399",
         "badge": "🟢 XANH"
     }
 }
 
+# Bảng màu tín hiệu kỹ thuật & trạng thái hệ thống SCADA (Tách rời với màu sản phẩm)
+TECHNICAL_STATUS_COLORS = {
+    "critical": "#EF4444",        # Dừng khẩn / Lỗi / Kẹt mẻ
+    "warning": "#F59E0B",         # Cảnh báo / Hao mòn cao
+    "healthy": "#10B981",         # Hoạt động tốt / Đạt chuẩn
+    "live_feed": "#38BDF8",       # Luồng dữ liệu trực tiếp / Cyan
+    "neutral": "#64748B",         # Trạng thái tĩnh / Muted
+}
+
 THEME_COLORS = {
-    "background": "#0B0F19",
-    "surface": "#111827",
-    "surface_card": "#1E293B",
-    "surface_hover": "#334155",
-    "primary": "#6366F1",
-    "primary_hover": "#4F46E5",
-    "accent_cyan": "#06B6D4",
+    "background": "#0B0F17",      # Deep Slate (Chống mỏi mắt)
+    "surface": "rgba(18, 26, 43, 0.85)", # Glass Card
+    "surface_card": "#121A2B",
+    "surface_hover": "rgba(30, 41, 59, 0.95)",
+    "primary": "#38BDF8",         # Cyan Neon
+    "primary_hover": "#0284C7",
+    "accent_indigo": "#6366F1",
     "text_main": "#F8FAFC",
-    "text_muted": "#94A3B8",
+    "text_secondary": "#94A3B8",
+    "text_muted": "#64748B",
     "border": "rgba(255, 255, 255, 0.08)",
+    "border_highlight": "rgba(56, 189, 248, 0.4)",
 }

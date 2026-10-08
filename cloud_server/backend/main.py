@@ -18,7 +18,11 @@ from schemas import (
     SortingLogCreate, SortingLogResponse,
     UserCreate, UserLogin, UserResponse, TokenResponse, ConfigUpdate
 )
-from analytics import calculate_stats, calculate_servo_health, parse_datetime, apply_shift_filter
+from analytics import (
+    calculate_stats, calculate_servo_health,
+    calculate_oee_metrics, calculate_target_vs_actual, calculate_hourly_heatmap_matrix,
+    parse_datetime, apply_shift_filter
+)
 from auth import (
     verify_password, get_password_hash, create_access_token,
     get_current_user, require_role
@@ -55,15 +59,18 @@ def init_default_data():
             db.add(worker_user)
 
         # 3. Khởi tạo cấu hình mặc định nếu chưa có
-        if not db.query(SystemConfig).first():
-            print("[Init DB] Creating default system configs...")
-            configs = [
-                SystemConfig(key="anomaly_threshold", value="10", description="Nguong canh bao bat thuong"),
-                SystemConfig(key="servo_red_angle", value="45", description="Goc xoay Servo Mau Do"),
-                SystemConfig(key="servo_yellow_angle", value="90", description="Goc xoay Servo Mau Vang"),
-                SystemConfig(key="servo_green_angle", value="135", description="Goc xoay Servo Mau Xanh")
-            ]
-            db.add_all(configs)
+        default_configs = [
+            ("anomaly_threshold", "10", "Nguong canh bao bat thuong"),
+            ("servo_red_angle", "45", "Goc xoay Servo Mau Do"),
+            ("servo_yellow_angle", "90", "Goc xoay Servo Mau Vang"),
+            ("servo_green_angle", "135", "Goc xoay Servo Mau Xanh"),
+            ("target_total_shift", "500", "Muc tieu san luong toan ca"),
+            ("ideal_run_rate", "15.0", "Toc do thiet ke dinh muc (sp/phut)")
+        ]
+        for k, v, d in default_configs:
+            cfg = db.query(SystemConfig).filter(SystemConfig.key == k).first()
+            if not cfg:
+                db.add(SystemConfig(key=k, value=v, description=d))
 
         db.commit()
         print("[Init DB] Default users and configs created successfully!")
@@ -71,6 +78,7 @@ def init_default_data():
         print(f"[Init DB] Error creating default data: {e}")
     finally:
         db.close()
+
 
 # Gọi tạo dữ liệu mặc định ngay khi load module
 init_default_data()
@@ -238,6 +246,52 @@ def get_servo_health(
     Lấy chỉ số phân tích vòng đời và mức độ hao mòn cơ cấu Servo SG90.
     """
     return calculate_servo_health(db, max_rated_cycles=max_rated_cycles)
+
+@app.get("/api/v1/analytics/oee")
+def get_oee_analytics(
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    shift: Optional[str] = None,
+    ideal_run_rate: float = 15.0,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy bộ chỉ số OEE công nghiệp (Overall Equipment Effectiveness = A x P x Q)
+    hỗ trợ bộ lọc thời gian và ca sản xuất.
+    """
+    dt_start = parse_datetime(start_time)
+    dt_end = parse_datetime(end_time)
+    return calculate_oee_metrics(
+        db, start_time=dt_start, end_time=dt_end, shift=shift, ideal_run_rate=ideal_run_rate
+    )
+
+@app.get("/api/v1/analytics/target-vs-actual")
+def get_target_vs_actual_analytics(
+    target_shift: int = 500,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    shift: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy dữ liệu đối chiếu tiến độ kế hoạch Target vs Actual & dự báo thời gian cán đích.
+    """
+    dt_start = parse_datetime(start_time)
+    dt_end = parse_datetime(end_time)
+    return calculate_target_vs_actual(
+        db, target_shift=target_shift, start_time=dt_start, end_time=dt_end, shift=shift
+    )
+
+@app.get("/api/v1/analytics/heatmap-matrix")
+def get_heatmap_matrix_analytics(
+    days: int = 7,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy ma trận nhiệt 24h x 7 ngày & 24h x 3 màu để biểu diễn Heatmap.
+    """
+    return calculate_hourly_heatmap_matrix(db, days=days)
+
 
 # --- EXPORT & CONFIG ROUTES (MANAGER ONLY) ---
 @app.get("/api/v1/export/csv")
