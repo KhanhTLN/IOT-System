@@ -168,8 +168,8 @@ def render_manager_view():
 
             st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-            # 2 Khối trực quan hóa SCADA: Donut Chart mỏng (Trái) & Micro-Bars phân bổ khay (Phải)
-            col_pie, col_bar = st.columns([1.1, 1.4])
+            # 2 Biểu đồ trực quan hóa Realtime: Donut Chart & Bar Chart (2 Cột cân đối)
+            col_pie, col_bar = st.columns(2)
 
             with col_pie:
                 render_chart_header(
@@ -188,20 +188,38 @@ def render_manager_view():
                         df_pie, names="Màu", values="Số lượng",
                         color="Màu",
                         color_discrete_map=plotly_color_map,
-                        hole=0.72
+                        hole=0.58
                     )
-                    fig_pie.add_annotation(
-                        text=f"<b>{total:,}</b><br><span style='font-size: 10px; color: #94A3B8;'>SẢN PHẨM</span>",
-                        showarrow=False,
-                        font=dict(size=20, color="#F8FAFC", family="JetBrains Mono")
+                    fig_pie.update_traces(
+                        textposition="inside",
+                        textinfo="percent",
+                        insidetextorientation="horizontal",
+                        textfont=dict(family="JetBrains Mono", size=13, color="#FFFFFF"),
+                        hovertemplate="<b>%{label}</b><br>Số lượng: %{value:,} SP<br>Tỷ trọng: %{percent}<extra></extra>",
+                        marker=dict(line=dict(color="#0B0F17", width=2))
                     )
                     fig_pie.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         font=dict(color="#94A3B8", family="Outfit"),
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
-                        margin=dict(l=10, r=10, t=10, b=10),
-                        height=240
+                        height=260,
+                        margin=dict(l=10, r=10, t=10, b=25),
+                        legend=dict(
+                            orientation="h", 
+                            yanchor="top", 
+                            y=-0.05, 
+                            xanchor="center", 
+                            x=0.5,
+                            font=dict(family="Outfit", size=12, color="#94A3B8")
+                        ),
+                        annotations=[dict(
+                            text=f"<b>{total:,}</b><br><span style='font-size:10px;color:#64748B;'>TỔNG SP</span>", 
+                            x=0.5, y=0.5, 
+                            font_size=15, 
+                            font_family="JetBrains Mono", 
+                            font_color="#F8FAFC",
+                            showarrow=False
+                        )]
                     )
                     st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
                 else:
@@ -214,45 +232,34 @@ def render_manager_view():
                     "Đếm tổng số log phân loại thành công từ Camera Edge và vi điều khiển ESP32.",
                     "Các khay chứa không bị đầy tràn hoặc bỏ trống bất thường."
                 )
-                
-                pct_r = (counts.get('RED', 0) / total * 100) if total > 0 else 0
-                pct_y = (counts.get('YELLOW', 0) / total * 100) if total > 0 else 0
-                pct_g = (counts.get('GREEN', 0) / total * 100) if total > 0 else 0
-
-                st.markdown(f"""
-                <div style="background: rgba(18, 26, 43, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px; margin-top: 4px;">
-                    <div style="font-size: 0.78rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
-                        Tỷ lệ tích lũy phân đoạn 3 khay:
-                    </div>
-                    <div class="micro-stacked-bar">
-                        <div class="micro-bar-seg-red" style="width: {pct_r}%;" title="Đỏ: {pct_r:.1f}%"></div>
-                        <div class="micro-bar-seg-yellow" style="width: {pct_y}%;" title="Vàng: {pct_y:.1f}%"></div>
-                        <div class="micro-bar-seg-green" style="width: {pct_g}%;" title="Xanh: {pct_g:.1f}%"></div>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 4px 0; font-size: 0.85rem;">
-                        <span style="color: #FB7185;"><span class="led-dot led-red"></span>Khay Đỏ (Góc 45°)</span>
-                        <strong class="mono-num" style="color: #F8FAFC;">{counts.get('RED', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">({pct_r:.1f}%)</span></strong>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.progress(min(1.0, pct_r / 100.0))
-
-                st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 4px 0; font-size: 0.85rem;">
-                        <span style="color: #FBBF24;"><span class="led-dot led-yellow"></span>Khay Vàng (Góc 90°)</span>
-                        <strong class="mono-num" style="color: #F8FAFC;">{counts.get('YELLOW', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">({pct_y:.1f}%)</span></strong>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.progress(min(1.0, pct_y / 100.0))
-
-                st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 4px 0; font-size: 0.85rem;">
-                        <span style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh (Góc 135°)</span>
-                        <strong class="mono-num" style="color: #F8FAFC;">{counts.get('GREEN', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">({pct_g:.1f}%)</span></strong>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                st.progress(min(1.0, pct_g / 100.0))
+                df_bar = pd.DataFrame([
+                    {"Màu": "Đỏ (RED)", "Số lượng": counts.get("RED", 0)},
+                    {"Màu": "Vàng (YELLOW)", "Số lượng": counts.get("YELLOW", 0)},
+                    {"Màu": "Xanh (GREEN)", "Số lượng": counts.get("GREEN", 0)}
+                ])
+                fig_bar = px.bar(
+                    df_bar, x="Màu", y="Số lượng", color="Màu",
+                    color_discrete_map=plotly_color_map,
+                    text="Số lượng"
+                )
+                fig_bar.update_traces(
+                    textposition="outside",
+                    textfont=dict(family="JetBrains Mono", size=13, color="#F8FAFC"),
+                    cliponaxis=False,
+                    hovertemplate="<b>%{x}</b><br>Số lượng: %{y:,} SP<extra></extra>",
+                    marker=dict(line=dict(color="#0B0F17", width=1))
+                )
+                fig_bar.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#94A3B8", family="Outfit"),
+                    xaxis=dict(showgrid=False, tickfont=dict(family="Outfit", size=12, color="#94A3B8")),
+                    yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", tickfont=dict(family="JetBrains Mono", size=11, color="#64748B")),
+                    showlegend=False,
+                    height=260,
+                    margin=dict(l=10, r=10, t=10, b=25)
+                )
+                st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
             st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
             render_chart_header(
@@ -486,7 +493,7 @@ def render_manager_view():
                         height=210,
                         margin=dict(l=20, r=20, t=30, b=10)
                     )
-                    st.plotly_chart(fig_gauge, use_container_width=True)
+                    st.plotly_chart(fig_gauge, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
                     # Đánh giá phân cấp chuẩn SCADA
                     if status_b == "WORLD_CLASS":
@@ -619,7 +626,7 @@ def render_manager_view():
                         height=210,
                         margin=dict(l=10, r=10, t=30, b=10)
                     )
-                    st.plotly_chart(fig_tgt, use_container_width=True)
+                    st.plotly_chart(fig_tgt, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
             st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
@@ -663,7 +670,7 @@ def render_manager_view():
                         height=270,
                         margin=dict(l=10, r=10, t=15, b=10)
                     )
-                    st.plotly_chart(fig_hm1, use_container_width=True)
+                    st.plotly_chart(fig_hm1, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
                 with tab_hm2:
                     hm_colors = heatmap_data.get("colors_heatmap", {})
@@ -682,7 +689,7 @@ def render_manager_view():
                         height=210,
                         margin=dict(l=10, r=10, t=15, b=10)
                     )
-                    st.plotly_chart(fig_hm2, use_container_width=True)
+                    st.plotly_chart(fig_hm2, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
             st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
@@ -712,15 +719,43 @@ def render_manager_view():
                 is_multi_day = (df_time['dt'].dt.date.nunique() > 1)
                 time_fmt = '%H:%M\n%d/%m' if is_multi_day else '%H:%M'
 
-                grouped = df_time.groupby(['dt_minute', 'color_label']).size().reset_index(name='count')
-                grouped = grouped.sort_values(by='dt_minute', ascending=True)
-                grouped['time_display'] = grouped['dt_minute'].dt.strftime(time_fmt)
+                # Tạo pivot table để đồng bộ mọi nhãn màu trên cùng trục thời gian (tránh đứt gãy / ngoằn ngoèo)
+                df_pivot_trend = df_time.pivot_table(
+                    index='dt_minute', 
+                    columns='color_label', 
+                    values='id', 
+                    aggfunc='count', 
+                    fill_value=0
+                )
+                for col_c in ["RED", "YELLOW", "GREEN"]:
+                    if col_c not in df_pivot_trend.columns:
+                        df_pivot_trend[col_c] = 0
+                df_pivot_trend = df_pivot_trend.sort_index()
+
+                # Tự động gom cụm thời gian hợp lý nếu dải dữ liệu trải dài nhiều giờ
+                n_points = len(df_pivot_trend)
+                if n_points > 60:
+                    df_res = df_pivot_trend.resample('5min').sum()
+                elif n_points > 30:
+                    df_res = df_pivot_trend.resample('2min').sum()
+                else:
+                    df_res = df_pivot_trend.copy()
+
+                df_res['time_display'] = df_res.index.strftime(time_fmt)
+                
+                # Chuẩn bị DataFrame cho Line Chart
+                df_trend_melted = df_res.reset_index().melt(
+                    id_vars=['time_display', 'dt_minute'],
+                    value_vars=[c for c in ['RED', 'YELLOW', 'GREEN'] if c in df_res.columns],
+                    var_name='color_label',
+                    value_name='count'
+                )
 
                 sub_t1, sub_t2 = st.tabs(["Diễn Biến Năng Suất (Timeline Trend)", "Sản Lượng Tích Lũy (Cumulative S-Curve)"])
 
                 with sub_t1:
                     fig_line = px.line(
-                        grouped, 
+                        df_trend_melted, 
                         x="time_display", 
                         y="count", 
                         color="color_label",
@@ -728,10 +763,14 @@ def render_manager_view():
                         line_shape="linear",
                         color_discrete_map=plotly_color_map,
                         labels={
-                            "time_display": "Thời gian (Giờ:Phút)", 
-                            "count": "Số lượng sản phẩm", 
+                            "time_display": "Thời gian", 
+                            "count": "Sản lượng (SP)", 
                             "color_label": "Màu"
                         }
+                    )
+                    fig_line.update_traces(
+                        line=dict(width=2),
+                        marker=dict(size=6)
                     )
                     fig_line.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
@@ -742,19 +781,24 @@ def render_manager_view():
                             gridcolor="rgba(255,255,255,0.06)",
                             type='category',
                             categoryorder='array',
-                            categoryarray=grouped['time_display'].unique().tolist()
+                            categoryarray=df_res['time_display'].tolist()
                         ),
                         yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", rangemode="tozero"),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        height=280,
                         margin=dict(l=10, r=10, t=30, b=10)
                     )
-                    st.plotly_chart(fig_line, use_container_width=True)
+                    st.plotly_chart(fig_line, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
                 with sub_t2:
-                    df_pivot = df_time.pivot_table(index='dt_minute', columns='color_label', values='id', aggfunc='count', fill_value=0)
-                    df_pivot = df_pivot.sort_index().cumsum()
-                    df_pivot['time_display'] = df_pivot.index.strftime(time_fmt)
-                    df_cum = df_pivot.melt(id_vars=['time_display'], var_name='color_label', value_name='cumulative_count')
+                    df_pivot_cum = df_pivot_trend.sort_index().cumsum()
+                    df_pivot_cum['time_display'] = df_pivot_cum.index.strftime(time_fmt)
+                    df_cum = df_pivot_cum.reset_index().melt(
+                        id_vars=['time_display', 'dt_minute'], 
+                        value_vars=[c for c in ['RED', 'YELLOW', 'GREEN'] if c in df_pivot_cum.columns],
+                        var_name='color_label', 
+                        value_name='cumulative_count'
+                    )
 
                     fig_area = px.area(
                         df_cum,
@@ -773,13 +817,14 @@ def render_manager_view():
                             gridcolor="rgba(255,255,255,0.06)",
                             type='category',
                             categoryorder='array',
-                            categoryarray=df_pivot['time_display'].unique().tolist()
+                            categoryarray=df_pivot_cum['time_display'].unique().tolist()
                         ),
                         yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)"),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        height=280,
                         margin=dict(l=10, r=10, t=30, b=10)
                     )
-                    st.plotly_chart(fig_area, use_container_width=True)
+                    st.plotly_chart(fig_area, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
                 st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
@@ -813,7 +858,7 @@ def render_manager_view():
                         margin=dict(l=10, r=10, t=10, b=10),
                         showlegend=False
                     )
-                    st.plotly_chart(fig_hour, use_container_width=True)
+                    st.plotly_chart(fig_hour, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
 
                 with col_summary:
                     render_chart_header(

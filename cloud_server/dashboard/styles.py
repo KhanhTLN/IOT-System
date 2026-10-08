@@ -546,9 +546,32 @@ def inject_custom_styles():
         /* ==========================================================================
            9. ZERO-FLICKER & ANTI-STALE RENDERING RULES
            ========================================================================== */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        #MainMenu { visibility: hidden !important; }
+        footer { visibility: hidden !important; }
+        
+        header[data-testid="stHeader"] {
+            background-color: transparent !important;
+            color: var(--scada-text-secondary) !important;
+        }
+
+        /* Nút thu gọn / mở rộng Sidebar (Sidebar Collapse/Expand Button) */
+        header[data-testid="stHeader"] button,
+        [data-testid="stSidebarCollapseButton"] button,
+        [data-testid="stSidebarCollapsedControl"] button {
+            color: #94A3B8 !important;
+            background: rgba(30, 41, 59, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+        }
+
+        header[data-testid="stHeader"] button:hover,
+        [data-testid="stSidebarCollapseButton"] button:hover,
+        [data-testid="stSidebarCollapsedControl"] button:hover {
+            color: #38BDF8 !important;
+            background: rgba(56, 189, 248, 0.15) !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+        }
 
         [data-stale="true"],
         [data-stale="true"] *,

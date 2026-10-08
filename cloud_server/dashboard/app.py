@@ -30,6 +30,17 @@ inject_anti_flicker_js()
 init_session()
 
 # 3. Phục hồi phiên đăng nhập tức thì từ Cookie trình duyệt hoặc Query Param khi F5
+if st.session_state.get("logged_out"):
+    # Nếu vừa bấm đăng xuất, xóa triệt để và dừng tại màn hình Login
+    st.session_state["logged_out"] = False
+    st.session_state["token"] = None
+    st.session_state["user"] = None
+    st.query_params.clear()
+    st.query_params["page"] = "login"
+    clear_token_from_storage()
+    render_login_view()
+    st.stop()
+
 if not st.session_state.get("token"):
     cookie_token = st.context.cookies.get("iot_auth_token") if hasattr(st, "context") and hasattr(st.context, "cookies") else None
     url_token = st.query_params.get("auth_token")
