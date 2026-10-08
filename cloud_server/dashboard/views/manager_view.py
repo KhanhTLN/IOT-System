@@ -9,6 +9,7 @@ from services.api_client import (
     fetch_stats, fetch_logs, fetch_configs, 
     update_config_value, fetch_all_users, 
     create_user_account, export_logs_csv_data,
+    export_logs_excel_data,
     fetch_servo_health, fetch_oee_metrics,
     fetch_target_vs_actual, fetch_heatmap_matrix
 )
@@ -412,14 +413,51 @@ def render_manager_view():
                 }
                 st.rerun()
 
-        # Hiển thị Chip trạng thái bộ lọc đang kích hoạt
+        # Hiển thị Chip trạng thái bộ lọc đang kích hoạt & Nút xuất báo cáo nhanh
         active_f = st.session_state.analytics_filter_applied
-        st.markdown(f"""
-        <div class="filter-active-status">
-            <span class="led-dot led-blue"></span>Phạm vi dữ liệu đang lọc: 
-            <span class="filter-active-val">{active_f.get('summary_label', 'Toàn bộ lịch sử')}</span>
-        </div>
-        """, unsafe_allow_html=True)
+        c_status_f, c_exp_btn = st.columns([1.5, 1])
+        with c_status_f:
+            st.markdown(f"""
+            <div class="filter-active-status" style="margin-top: 0;">
+                <span class="led-dot led-blue"></span>Phạm vi dữ liệu đang lọc: 
+                <span class="filter-active-val">{active_f.get('summary_label', 'Toàn bộ lịch sử')}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with c_exp_btn:
+            with st.popover("Xuất Báo Cáo Theo Bộ Lọc", use_container_width=True):
+                st.markdown("<div style='font-weight: 700; color: #38BDF8; margin-bottom: 8px;'>TẢI BÁO CÁO PHẠM VI HIỆN TẠI</div>", unsafe_allow_html=True)
+                excel_bytes_f = export_logs_excel_data(
+                    start_time=active_f.get("start_time"),
+                    end_time=active_f.get("end_time"),
+                    shift=active_f.get("shift_param"),
+                    color_label=active_f.get("color_param"),
+                    target_shift=int(active_f.get("target_shift", 500)),
+                    ideal_run_rate=float(active_f.get("ideal_rate", 15.0))
+                )
+                if excel_bytes_f:
+                    st.download_button(
+                        label="Tải Báo Cáo Excel Đa Sheet (.xlsx)",
+                        data=excel_bytes_f,
+                        file_name=f"scada_report_{time.strftime('%Y%m%d_%H%M%S')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        type="primary",
+                        use_container_width=True
+                    )
+                st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+                csv_bytes_f = export_logs_csv_data(
+                    start_time=active_f.get("start_time"),
+                    end_time=active_f.get("end_time"),
+                    shift=active_f.get("shift_param"),
+                    color_label=active_f.get("color_param")
+                )
+                if csv_bytes_f:
+                    st.download_button(
+                        label="Tải File Nhật Ký CSV (.csv)",
+                        data=csv_bytes_f,
+                        file_name=f"scada_logs_{time.strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
 
         st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
@@ -968,20 +1006,72 @@ def render_manager_view():
         col_export, col_cfg = st.columns([1, 1.2])
 
         with col_export:
-            st.markdown("<div class='section-header'>XUẤT DỮ LIỆU SẢN XUẤT (CSV)</div>", unsafe_allow_html=True)
-            st.write("Tải toàn bộ nhật ký phân loại phục vụ lưu trữ hoặc tích hợp hệ thống ERP:")
+            st.markdown("<div class='section-header'>TRUNG TÂM XUẤT BÁO CÁO SCADA (.XLSX / .CSV)</div>", unsafe_allow_html=True)
+            st.markdown("""
+            <div style="font-size: 0.84rem; color: #94A3B8; margin-bottom: 12px;">
+                Xuất báo cáo định dạng bảng tính cao cấp phục vụ lưu trữ ERP, đánh giá OEE ca làm việc và nghiệm thu chất lượng:
+            </div>
+            """, unsafe_allow_html=True)
             
-            csv_data = export_logs_csv_data()
+            exp_scope = st.radio(
+                "Phạm vi dữ liệu xuất báo cáo:",
+                ["Theo bộ lọc đang chọn tại Tab Báo Cáo", "Toàn bộ lịch sử hệ thống (Full Dump)"],
+                horizontal=True
+            )
+            
+            f_applied = st.session_state.get("analytics_filter_applied", {})
+            if exp_scope == "Theo bộ lọc đang chọn tại Tab Báo Cáo":
+                s_t = f_applied.get("start_time")
+                e_t = f_applied.get("end_time")
+                sh_p = f_applied.get("shift_param")
+                col_p = f_applied.get("color_param")
+                tgt_p = int(f_applied.get("target_shift", 500))
+                id_p = float(f_applied.get("ideal_rate", 15.0))
+                scope_note = f"Phạm vi: <code>{f_applied.get('summary_label', 'Mặc định')}</code>"
+            else:
+                s_t, e_t, sh_p, col_p = None, None, None, None
+                tgt_p = 500
+                id_p = 15.0
+                scope_note = "Phạm vi: <code>Toàn bộ cơ sở dữ liệu</code>"
+
+            st.markdown(f"<div style='margin-bottom: 14px; font-size: 0.82rem; color: #CBD5E1;'>{scope_note}</div>", unsafe_allow_html=True)
+
+            # Nút tải Excel Đa Sheet (.xlsx)
+            excel_data = export_logs_excel_data(
+                start_time=s_t, end_time=e_t, shift=sh_p, color_label=col_p,
+                target_shift=tgt_p, ideal_run_rate=id_p
+            )
+            if excel_data:
+                st.download_button(
+                    label="Tải Báo Cáo Excel Đa Sheet (.xlsx)",
+                    data=excel_data,
+                    file_name=f"iot_factory_scada_report_{time.strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    type="primary",
+                    use_container_width=True
+                )
+            
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+
+            # Nút tải CSV
+            csv_data = export_logs_csv_data(start_time=s_t, end_time=e_t, shift=sh_p, color_label=col_p)
             if csv_data:
                 st.download_button(
-                    label="Tải Báo Cáo CSV Toàn Bộ Dữ Liệu",
+                    label="Tải Nhật Ký Phân Loại (.csv)",
                     data=csv_data,
-                    file_name="iot_factory_sorting_report.csv",
+                    file_name=f"iot_factory_sorting_logs_{time.strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="text/csv",
                     use_container_width=True
                 )
-            else:
-                st.warning("Chưa có dữ liệu hoặc không thể tải file CSV.")
+
+            st.markdown("""
+            <div style="margin-top: 16px; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; font-size: 0.78rem; color: #94A3B8;">
+                <strong style="color: #38BDF8;">Cấu trúc file Excel 3 Sheet:</strong><br>
+                &bull; <strong>Sheet 1 (Executive Summary):</strong> Chỉ số OEE, KPI hoàn thành ca, hao mòn Servo.<br>
+                &bull; <strong>Sheet 2 (Shift & Hourly Analysis):</strong> Phân bổ theo 24 khung giờ & 3 ca làm việc.<br>
+                &bull; <strong>Sheet 3 (Raw Sorting Logs):</strong> Chi tiết từng lượt gạt kèm độ tin cậy AI.
+            </div>
+            """, unsafe_allow_html=True)
 
         with col_cfg:
             st.markdown("<div class='section-header'>CẤU HÌNH THAM SỐ VẬN HÀNH & MỤC TIÊU</div>", unsafe_allow_html=True)
