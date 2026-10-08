@@ -144,9 +144,43 @@ def create_user_account(username, password, full_name, role):
     err = res.json().get("detail", "Lỗi tạo tài khoản") if res else "Không thể kết nối Backend"
     return False, err
 
-def export_logs_csv_data():
-    """Tải file báo cáo CSV từ Backend (Chỉ MANAGER)"""
-    res = request_api("GET", "/api/v1/export/csv", use_auth=True, raw_response=True)
+def export_logs_csv_data(
+    start_time: str = None,
+    end_time: str = None,
+    shift: str = None,
+    color_label: str = None
+):
+    """Tải file báo cáo CSV từ Backend kèm bộ lọc (Chỉ MANAGER)"""
+    params = {}
+    if start_time: params["start_time"] = start_time
+    if end_time: params["end_time"] = end_time
+    if shift: params["shift"] = shift
+    if color_label: params["color_label"] = color_label
+
+    res = request_api("GET", "/api/v1/export/csv", params=params, use_auth=True, raw_response=True)
+    if res and res.status_code == 200:
+        return res.content
+    return None
+
+def export_logs_excel_data(
+    start_time: str = None,
+    end_time: str = None,
+    shift: str = None,
+    color_label: str = None,
+    target_shift: int = 500,
+    ideal_run_rate: float = 15.0
+):
+    """Tải file báo cáo Excel đa Sheet (.xlsx) từ Backend kèm bộ lọc (Chỉ MANAGER)"""
+    params = {
+        "target_shift": target_shift,
+        "ideal_run_rate": ideal_run_rate
+    }
+    if start_time: params["start_time"] = start_time
+    if end_time: params["end_time"] = end_time
+    if shift: params["shift"] = shift
+    if color_label: params["color_label"] = color_label
+
+    res = request_api("GET", "/api/v1/export/excel", params=params, use_auth=True, raw_response=True)
     if res and res.status_code == 200:
         return res.content
     return None
