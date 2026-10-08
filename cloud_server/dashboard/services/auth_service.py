@@ -9,14 +9,22 @@ def init_session():
         st.session_state["token"] = None
     if "user" not in st.session_state:
         st.session_state["user"] = None
+    if "logged_out" not in st.session_state:
+        st.session_state["logged_out"] = False
 
 def save_token_to_storage(token: str):
     """Lưu JWT Token vào cả Browser Cookie và LocalStorage để F5 không bao giờ bị mất phiên"""
     js_code = f"""
     <script>
         try {{
+            if (window.parent && window.parent.localStorage) {{
+                window.parent.localStorage.setItem("iot_auth_token", "{token}");
+            }}
             localStorage.setItem("iot_auth_token", "{token}");
             document.cookie = "iot_auth_token={token}; path=/; max-age=604800; SameSite=Lax";
+            if (window.parent && window.parent.document) {{
+                window.parent.document.cookie = "iot_auth_token={token}; path=/; max-age=604800; SameSite=Lax";
+            }}
         }} catch(e) {{
             console.error("Storage save error:", e);
         }}
@@ -29,8 +37,14 @@ def clear_token_from_storage():
     js_code = """
     <script>
         try {
+            if (window.parent && window.parent.localStorage) {
+                window.parent.localStorage.removeItem("iot_auth_token");
+            }
             localStorage.removeItem("iot_auth_token");
-            document.cookie = "iot_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+            document.cookie = "iot_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; max-age=0; SameSite=Lax";
+            if (window.parent && window.parent.document) {
+                window.parent.document.cookie = "iot_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; max-age=0; SameSite=Lax";
+            }
         } catch(e) {
             console.error("Storage remove error:", e);
         }
@@ -43,7 +57,13 @@ def sync_from_local_storage():
     js_code = """
     <script>
         try {
-            const token = localStorage.getItem("iot_auth_token");
+            let token = null;
+            if (window.parent && window.parent.localStorage) {
+                token = window.parent.localStorage.getItem("iot_auth_token");
+            }
+            if (!token) {
+                token = localStorage.getItem("iot_auth_token");
+            }
             if (token && token !== "null" && token.length > 10) {
                 const url = new URL(window.parent.location.href);
                 if (url.searchParams.get("auth_token") !== token) {
@@ -70,6 +90,7 @@ def login_user(username: str, password: str):
             data = res.json()
             st.session_state["token"] = data["access_token"]
             st.session_state["user"] = data["user"]
+            st.session_state["logged_out"] = False
             save_token_to_storage(data["access_token"])
             return True, data["user"]
         else:
@@ -94,7 +115,10 @@ def verify_token(token: str):
 
 def logout_user():
     """Xóa sạch phiên đăng nhập và LocalStorage"""
-    st.session_state.clear()
+    st.session_state["token"] = None
+    st.session_state["user"] = None
+    st.session_state["logged_out"] = True
     st.query_params.clear()
+    st.query_params["page"] = "login"
     clear_token_from_storage()
     st.rerun()
