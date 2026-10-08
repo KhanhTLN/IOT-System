@@ -23,9 +23,19 @@ def render_worker_view():
     refresh_sec = st.sidebar.slider("Chu kỳ làm mới (giây)", min_value=2, max_value=20, value=3)
 
     # --- HEADER ---
-    st.markdown('<div class="app-title-gradient">TRẠM GIÁM SÁT DÂY CHUYỀN PHÂN LOẠI</div>', unsafe_allow_html=True)
-    status_badge = f"<span class='live-badge'><span class='live-dot'></span> LIVE SCADA FEED ({refresh_sec}s)</span>" if auto_refresh else "<span style='color: #64748B; font-size: 0.85rem;'>Tạm dừng tự động làm mới</span>"
-    st.markdown(f'<div class="app-subtitle">Màn hình vận hành dành cho Công nhân trực ca &nbsp;&bull;&nbsp; {status_badge}</div>', unsafe_allow_html=True)
+    status_badge = f"<span class='live-badge'><span class='live-dot'></span> LIVE SCADA ({refresh_sec}s)</span>" if auto_refresh else "<span class='scada-topbar-chip'>PAUSED</span>"
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div>
+            <div class="app-title-gradient">TRẠM GIÁM SÁT DÂY CHUYỀN PHÂN LOẠI</div>
+            <div class="app-subtitle" style="margin-bottom: 0;">Màn hình vận hành &amp; giám sát trực tiếp dành cho Công nhân trực ca</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="scada-topbar-chip"><span class="led-dot led-green"></span>PLC NODE: ONLINE</span>
+            {status_badge}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Realtime Fragment: Cập nhật mượt mà tại chỗ
     @st.fragment(run_every=f"{refresh_sec}s" if auto_refresh else None)
@@ -41,62 +51,62 @@ def render_worker_view():
         if anomaly:
             st.markdown(f"""
             <div class="pulse-alert-box">
-                <div style="font-size: 1.8rem; font-weight: 800; color: #F87171;">!</div>
-                <div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #EF4444; line-height: 1; padding: 4px 10px; background: rgba(239,68,68,0.2); border-radius: 8px; border: 1px solid rgba(239,68,68,0.4);">!</div>
+                <div style="flex: 1;">
                     <div class="alert-title">PHÁT HIỆN DẤU HIỆU BẤT THƯỜNG TRÊN DÂY CHUYỀN</div>
-                    <div class="alert-desc">{anomaly} — Cần kiểm tra khay cấp liệu và camera cảm biến ngay lập tức.</div>
+                    <div class="alert-desc">{anomaly} &bull; Cần kiểm tra khay cấp liệu và camera cảm biến ngay lập tức.</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-        # --- 5 KPI CARDS ---
+        # --- 5 SCADA KPI CARDS ---
         c1, c2, c3, c4, c5 = st.columns(5)
 
         with c1:
             st.markdown(f"""
-            <div class="kpi-card kpi-total">
-                <div class="kpi-title">Tổng Sản Phẩm</div>
-                <div class="kpi-value">{total:,}</div>
-                <div class="kpi-sub">Toàn ca sản xuất</div>
+            <div class="scada-kpi-card kpi-total">
+                <div class="scada-kpi-title">Tổng Sản Phẩm</div>
+                <div class="scada-kpi-val">{total:,}</div>
+                <div class="scada-kpi-sub"><span style="color: #38BDF8;">&bull;</span> Toàn ca sản xuất</div>
             </div>
             """, unsafe_allow_html=True)
 
         with c2:
             pct_red = (counts.get('RED', 0) / total * 100) if total > 0 else 0
             st.markdown(f"""
-            <div class="kpi-card kpi-red">
-                <div class="kpi-title" style="color: #FB7185;"><span class="led-dot led-red"></span>Khay Đỏ</div>
-                <div class="kpi-value" style="color: #FB7185;">{counts.get('RED', 0):,}</div>
-                <div class="kpi-sub">Chiếm {pct_red:.1f}%</div>
+            <div class="scada-kpi-card kpi-red">
+                <div class="scada-kpi-title" style="color: #FB7185;"><span class="led-dot led-red"></span>Khay Đỏ (45°)</div>
+                <div class="scada-kpi-val" style="color: #FB7185;">{counts.get('RED', 0):,}</div>
+                <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #FB7185; margin-left: 2px;">{pct_red:.1f}%</strong></div>
             </div>
             """, unsafe_allow_html=True)
 
         with c3:
             pct_yel = (counts.get('YELLOW', 0) / total * 100) if total > 0 else 0
             st.markdown(f"""
-            <div class="kpi-card kpi-yellow">
-                <div class="kpi-title" style="color: #FBBF24;"><span class="led-dot led-yellow"></span>Khay Vàng</div>
-                <div class="kpi-value" style="color: #FBBF24;">{counts.get('YELLOW', 0):,}</div>
-                <div class="kpi-sub">Chiếm {pct_yel:.1f}%</div>
+            <div class="scada-kpi-card kpi-yellow">
+                <div class="scada-kpi-title" style="color: #FBBF24;"><span class="led-dot led-yellow"></span>Khay Vàng (90°)</div>
+                <div class="scada-kpi-val" style="color: #FBBF24;">{counts.get('YELLOW', 0):,}</div>
+                <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #FBBF24; margin-left: 2px;">{pct_yel:.1f}%</strong></div>
             </div>
             """, unsafe_allow_html=True)
 
         with c4:
             pct_grn = (counts.get('GREEN', 0) / total * 100) if total > 0 else 0
             st.markdown(f"""
-            <div class="kpi-card kpi-green">
-                <div class="kpi-title" style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh</div>
-                <div class="kpi-value" style="color: #34D399;">{counts.get('GREEN', 0):,}</div>
-                <div class="kpi-sub">Chiếm {pct_grn:.1f}%</div>
+            <div class="scada-kpi-card kpi-green">
+                <div class="scada-kpi-title" style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh (135°)</div>
+                <div class="scada-kpi-val" style="color: #34D399;">{counts.get('GREEN', 0):,}</div>
+                <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #34D399; margin-left: 2px;">{pct_grn:.1f}%</strong></div>
             </div>
             """, unsafe_allow_html=True)
 
         with c5:
             st.markdown(f"""
-            <div class="kpi-card kpi-speed">
-                <div class="kpi-title" style="color: #C084FC;"><span class="led-dot led-blue"></span>Năng Suất</div>
-                <div class="kpi-value" style="color: #C084FC;">{speed:.1f}</div>
-                <div class="kpi-sub">Sản phẩm / phút</div>
+            <div class="scada-kpi-card kpi-speed">
+                <div class="scada-kpi-title" style="color: #C084FC;"><span class="led-dot led-blue"></span>Vận Tốc Thực</div>
+                <div class="scada-kpi-val" style="color: #C084FC;">{speed:.1f}</div>
+                <div class="scada-kpi-sub">Đơn vị: <span style="color: #CBD5E1; margin-left: 2px;">SP / Phút</span></div>
             </div>
             """, unsafe_allow_html=True)
 

@@ -69,9 +69,19 @@ def render_manager_view():
     }
 
     # --- HEADER ---
-    st.markdown('<div class="app-title-gradient">BẢNG ĐIỀU KHIỂN QUẢN LÝ SẢN XUẤT</div>', unsafe_allow_html=True)
-    status_badge = f"<span class='live-badge'><span class='live-dot'></span> LIVE SCADA FEED ({refresh_sec}s)</span>" if auto_refresh else "<span style='color: #64748B; font-size: 0.85rem;'>Tạm dừng tự động làm mới</span>"
-    st.markdown(f'<div class="app-subtitle">Trung tâm phân tích hiệu suất dây chuyền, chỉ số OEE, đối chiếu mục tiêu & xuất báo cáo &nbsp;&bull;&nbsp; {status_badge}</div>', unsafe_allow_html=True)
+    status_badge = f"<span class='live-badge'><span class='live-dot'></span> LIVE SCADA ({refresh_sec}s)</span>" if auto_refresh else "<span class='scada-topbar-chip'>PAUSED</span>"
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div>
+            <div class="app-title-gradient">BẢNG ĐIỀU KHIỂN QUẢN LÝ SẢN XUẤT</div>
+            <div class="app-subtitle" style="margin-bottom: 0;">Trung tâm phân tích hiệu suất dây chuyền, chỉ số OEE, đối chiếu mục tiêu &amp; báo cáo SCADA</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="scada-topbar-chip"><span class="led-dot led-green"></span>PLC NODE: ONLINE</span>
+            {status_badge}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # --- 4 TABS (NO EMOJI) ---
     tab_realtime, tab_analytics, tab_config, tab_users = st.tabs([
@@ -97,68 +107,69 @@ def render_manager_view():
             if anomaly:
                 st.markdown(f"""
                 <div class="pulse-alert-box">
-                    <div style="font-size: 1.8rem; font-weight: 800; color: #F87171;">!</div>
-                    <div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #EF4444; line-height: 1; padding: 4px 10px; background: rgba(239,68,68,0.2); border-radius: 8px; border: 1px solid rgba(239,68,68,0.4);">!</div>
+                    <div style="flex: 1;">
                         <div class="alert-title">CẢNH BÁO BẤT THƯỜNG TRÊN DÂY CHUYỀN SẢN XUẤT</div>
-                        <div class="alert-desc">{anomaly} — Cần kiểm tra khay cấp liệu và cảm biến phân loại ngay lập tức.</div>
+                        <div class="alert-desc">{anomaly} &bull; Cần kiểm tra khay cấp liệu và camera cảm biến phân loại ngay lập tức.</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-            # 5 KPI Cards
+            # 5 SCADA KPI Cards (Lưới 12 cột đều nhau)
             c1, c2, c3, c4, c5 = st.columns(5)
+            
             with c1:
                 st.markdown(f"""
-                <div class="kpi-card kpi-total">
-                    <div class="kpi-title">Tổng Sản Phẩm</div>
-                    <div class="kpi-value">{total:,}</div>
-                    <div class="kpi-sub">Tích lũy toàn bộ</div>
+                <div class="scada-kpi-card kpi-total">
+                    <div class="scada-kpi-title">Tổng Sản Phẩm</div>
+                    <div class="scada-kpi-val">{total:,}</div>
+                    <div class="scada-kpi-sub"><span style="color: #38BDF8;">&bull;</span> Toàn ca tích lũy</div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with c2:
                 pct_red = (counts.get('RED', 0) / total * 100) if total > 0 else 0
                 st.markdown(f"""
-                <div class="kpi-card kpi-red">
-                    <div class="kpi-title" style="color: #FB7185;"><span class="led-dot led-red"></span>Khay Đỏ</div>
-                    <div class="kpi-value" style="color: #FB7185;">{counts.get('RED', 0):,}</div>
-                    <div class="kpi-sub">Tỷ lệ: {pct_red:.1f}%</div>
+                <div class="scada-kpi-card kpi-red">
+                    <div class="scada-kpi-title" style="color: #FB7185;"><span class="led-dot led-red"></span>Khay Đỏ (45°)</div>
+                    <div class="scada-kpi-val" style="color: #FB7185;">{counts.get('RED', 0):,}</div>
+                    <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #FB7185; margin-left: 2px;">{pct_red:.1f}%</strong></div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with c3:
                 pct_yel = (counts.get('YELLOW', 0) / total * 100) if total > 0 else 0
                 st.markdown(f"""
-                <div class="kpi-card kpi-yellow">
-                    <div class="kpi-title" style="color: #FBBF24;"><span class="led-dot led-yellow"></span>Khay Vàng</div>
-                    <div class="kpi-value" style="color: #FBBF24;">{counts.get('YELLOW', 0):,}</div>
-                    <div class="kpi-sub">Tỷ lệ: {pct_yel:.1f}%</div>
+                <div class="scada-kpi-card kpi-yellow">
+                    <div class="scada-kpi-title" style="color: #FBBF24;"><span class="led-dot led-yellow"></span>Khay Vàng (90°)</div>
+                    <div class="scada-kpi-val" style="color: #FBBF24;">{counts.get('YELLOW', 0):,}</div>
+                    <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #FBBF24; margin-left: 2px;">{pct_yel:.1f}%</strong></div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with c4:
                 pct_grn = (counts.get('GREEN', 0) / total * 100) if total > 0 else 0
                 st.markdown(f"""
-                <div class="kpi-card kpi-green">
-                    <div class="kpi-title" style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh</div>
-                    <div class="kpi-value" style="color: #34D399;">{counts.get('GREEN', 0):,}</div>
-                    <div class="kpi-sub">Tỷ lệ: {pct_grn:.1f}%</div>
+                <div class="scada-kpi-card kpi-green">
+                    <div class="scada-kpi-title" style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh (135°)</div>
+                    <div class="scada-kpi-val" style="color: #34D399;">{counts.get('GREEN', 0):,}</div>
+                    <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #34D399; margin-left: 2px;">{pct_grn:.1f}%</strong></div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with c5:
                 st.markdown(f"""
-                <div class="kpi-card kpi-speed">
-                    <div class="kpi-title" style="color: #C084FC;"><span class="led-dot led-blue"></span>Năng Suất</div>
-                    <div class="kpi-value" style="color: #C084FC;">{speed:.1f}</div>
-                    <div class="kpi-sub">Sản phẩm / phút</div>
+                <div class="scada-kpi-card kpi-speed">
+                    <div class="scada-kpi-title" style="color: #C084FC;"><span class="led-dot led-blue"></span>Vận Tốc Thực</div>
+                    <div class="scada-kpi-val" style="color: #C084FC;">{speed:.1f}</div>
+                    <div class="scada-kpi-sub">Đơn vị: <span style="color: #CBD5E1; margin-left: 2px;">SP / Phút</span></div>
                 </div>
                 """, unsafe_allow_html=True)
 
             st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-            # 2 Biểu đồ thống kê Realtime
-            col_pie, col_bar = st.columns(2)
+            # 2 Khối trực quan hóa SCADA: Donut Chart mỏng (Trái) & Micro-Bars phân bổ khay (Phải)
+            col_pie, col_bar = st.columns([1.1, 1.4])
 
             with col_pie:
                 render_chart_header(
@@ -177,16 +188,22 @@ def render_manager_view():
                         df_pie, names="Màu", values="Số lượng",
                         color="Màu",
                         color_discrete_map=plotly_color_map,
-                        hole=0.55
+                        hole=0.72
+                    )
+                    fig_pie.add_annotation(
+                        text=f"<b>{total:,}</b><br><span style='font-size: 10px; color: #94A3B8;'>SẢN PHẨM</span>",
+                        showarrow=False,
+                        font=dict(size=20, color="#F8FAFC", family="JetBrains Mono")
                     )
                     fig_pie.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         font=dict(color="#94A3B8", family="Outfit"),
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-                        margin=dict(l=10, r=10, t=10, b=10)
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+                        margin=dict(l=10, r=10, t=10, b=10),
+                        height=240
                     )
-                    st.plotly_chart(fig_pie, use_container_width=True)
+                    st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False, "displaylogo": False})
                 else:
                     st.info("Chưa có dữ liệu phân loại.")
 
@@ -197,26 +214,45 @@ def render_manager_view():
                     "Đếm tổng số log phân loại thành công từ Camera Edge và vi điều khiển ESP32.",
                     "Các khay chứa không bị đầy tràn hoặc bỏ trống bất thường."
                 )
-                df_bar = pd.DataFrame([
-                    {"Màu": "Đỏ (RED)", "Số lượng": counts.get("RED", 0)},
-                    {"Màu": "Vàng (YELLOW)", "Số lượng": counts.get("YELLOW", 0)},
-                    {"Màu": "Xanh (GREEN)", "Số lượng": counts.get("GREEN", 0)}
-                ])
-                fig_bar = px.bar(
-                    df_bar, x="Màu", y="Số lượng", color="Màu",
-                    color_discrete_map=plotly_color_map,
-                    text="Số lượng"
-                )
-                fig_bar.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#94A3B8", family="Outfit"),
-                    xaxis=dict(showgrid=False),
-                    yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)"),
-                    showlegend=False,
-                    margin=dict(l=10, r=10, t=10, b=10)
-                )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                
+                pct_r = (counts.get('RED', 0) / total * 100) if total > 0 else 0
+                pct_y = (counts.get('YELLOW', 0) / total * 100) if total > 0 else 0
+                pct_g = (counts.get('GREEN', 0) / total * 100) if total > 0 else 0
+
+                st.markdown(f"""
+                <div style="background: rgba(18, 26, 43, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px; margin-top: 4px;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
+                        Tỷ lệ tích lũy phân đoạn 3 khay:
+                    </div>
+                    <div class="micro-stacked-bar">
+                        <div class="micro-bar-seg-red" style="width: {pct_r}%;" title="Đỏ: {pct_r:.1f}%"></div>
+                        <div class="micro-bar-seg-yellow" style="width: {pct_y}%;" title="Vàng: {pct_y:.1f}%"></div>
+                        <div class="micro-bar-seg-green" style="width: {pct_g}%;" title="Xanh: {pct_g:.1f}%"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 4px 0; font-size: 0.85rem;">
+                        <span style="color: #FB7185;"><span class="led-dot led-red"></span>Khay Đỏ (Góc 45°)</span>
+                        <strong class="mono-num" style="color: #F8FAFC;">{counts.get('RED', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">({pct_r:.1f}%)</span></strong>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.progress(min(1.0, pct_r / 100.0))
+
+                st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 4px 0; font-size: 0.85rem;">
+                        <span style="color: #FBBF24;"><span class="led-dot led-yellow"></span>Khay Vàng (Góc 90°)</span>
+                        <strong class="mono-num" style="color: #F8FAFC;">{counts.get('YELLOW', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">({pct_y:.1f}%)</span></strong>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.progress(min(1.0, pct_y / 100.0))
+
+                st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 4px 0; font-size: 0.85rem;">
+                        <span style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh (Góc 135°)</span>
+                        <strong class="mono-num" style="color: #F8FAFC;">{counts.get('GREEN', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">({pct_g:.1f}%)</span></strong>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.progress(min(1.0, pct_g / 100.0))
 
             st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
             render_chart_header(
