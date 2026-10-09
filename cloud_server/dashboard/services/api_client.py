@@ -3,6 +3,8 @@ import streamlit as st
 from config import API_BASE_URL
 from services.auth_service import logout_user
 
+_session = requests.Session()
+
 def get_headers(use_auth=True):
     headers = {"Content-Type": "application/json"}
     token = st.session_state.get("token")
@@ -11,14 +13,14 @@ def get_headers(use_auth=True):
     return headers
 
 def request_api(method: str, endpoint: str, json_data=None, params=None, use_auth=True, raw_response=False):
-    """Thực hiện HTTP request an toàn và xử lý mã trạng thái"""
+    """Thực hiện HTTP request an toàn và xử lý mã trạng thái (Tái sử dụng TCP connection với Session)"""
     url = f"{API_BASE_URL}{endpoint}"
     headers = get_headers(use_auth)
     try:
         if method == "GET":
-            res = requests.get(url, headers=headers, params=params, timeout=5)
+            res = _session.get(url, headers=headers, params=params, timeout=5)
         elif method == "POST":
-            res = requests.post(url, headers=headers, json=json_data, timeout=5)
+            res = _session.post(url, headers=headers, json=json_data, timeout=5)
         else:
             return None
 
