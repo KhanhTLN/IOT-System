@@ -38,7 +38,7 @@ def render_worker_view():
     """, unsafe_allow_html=True)
 
     # Realtime Fragment: Cập nhật mượt mà tại chỗ
-    @st.fragment(run_every=f"{refresh_sec}s" if auto_refresh else None)
+    @st.fragment(run_every=int(refresh_sec) if auto_refresh else None)
     def render_worker_realtime_data():
         stats = fetch_stats()
         logs = fetch_logs(limit=25)
