@@ -34,24 +34,26 @@ flowchart TD
         CV --> MQTT_Pub["🚀 mqtt_publisher.py"]
     end
 
-    subgraph Hardware_Simulation ["Tầng Chấp Hành (Wokwi / ESP32)"]
-        Broker[("🌐 MQTT Broker")] <--> ESP["⚡ ESP32 Firmware (main.ino)"]
-        ESP --> Servo["⚙️ Servo SG90 (45° / 90° / 135°)"]
+    subgraph Hardware_Actuator ["Tầng Chấp Hành (ESP32 Thật / Wokwi)"]
+        ESP["⚡ ESP32 Firmware (main.ino)"] --> Servo["⚙️ Servo SG90 (45° / 90° / 135°)"]
     end
 
-    subgraph Cloud_Layer ["Tầng Đám Mây (Cloud Server)"]
+    subgraph Cloud_Layer ["Tầng Đám Mây & Máy Chủ (Cloud Server)"]
+        Broker[("🏠 Eclipse Mosquitto Broker<br/>Port 1883 / 9001")]
         API["🚀 FastAPI Backend (/api/v1/logs)"]
-        DB[("💾 Database (PostgreSQL / SQLite)")]
+        DB[("🗄️ Database: PostgreSQL / SQLite")]
         Analytics["📊 Analytics Engine (KPI / Anomaly)"]
         Dashboard["🖥️ Streamlit SCADA Dashboard"]
-
+        
+        Broker <--> API
         API --> DB
         API --> Analytics
         Dashboard <--> API
     end
 
-    MQTT_Pub -- "MQTT Publish: factory/servo/control" --> Broker
-    MQTT_Pub -- "HTTP POST /api/v1/logs" --> API
+    MQTT_Pub -->|"MQTT Publish: factory/servo/control"| Broker
+    Broker -->|"MQTT Command"| ESP
+    MQTT_Pub -->|"HTTP POST: /api/v1/logs"| API
 ```
 
 ---
@@ -70,8 +72,10 @@ iot-sorting-system/
 │   ├── diagram.json                # Sơ đồ kết nối mạch Wokwi (ESP32 + Servo SG90)
 │   └── main.ino                    # Firmware C++ ESP32 nhận MQTT điều khiển góc quay Servo
 │
-├── cloud_server/                   # [TẦNG CLOUD] Dịch vụ Backend & Giao diện SCADA
-│   ├── docker-compose.yml          # Triển khai trọn gói Database + Backend + Dashboard
+├── cloud_server/                   # [TẦNG CLOUD & BROKER] Dịch vụ Backend, SCADA & Broker
+│   ├── docker-compose.yml          # Triển khai trọn gói Database + Mosquitto + Backend + Dashboard
+│   ├── mosquitto/                  # Cấu hình Eclipse Mosquitto MQTT Broker nội bộ
+│   │   └── config/mosquitto.conf   # Cho phép kết nối LAN port 1883 & WebSocket 9001
 │   ├── backend/
 │   │   ├── Dockerfile
 │   │   ├── requirements.txt
@@ -178,17 +182,25 @@ iot-sorting-system/
 
 ## 4. Thông số kỹ thuật & Giao thức truyền thông
 
-### A. MQTT Broker & Topics
+### A. MQTT Broker (Eclipse Mosquitto Nội Bộ / LAN)
+* **Broker Engine:** Eclipse Mosquitto v2.0+ (Containerized / Local).
+* **Địa chỉ Host:** `localhost` (khi chạy trên máy tính) hoặc `192.168.x.x` (IP mạng LAN khi ESP32 thật kết nối).
+* **Cổng dịch vụ (Ports):** 
+  * `1883` (TCP chuẩn cho ESP32, Python Edge Node và Cloud Consumer).
+  * `9001` (WebSocket hỗ trợ giao diện Web nếu cần).
+* **Ưu thế công nghiệp:** Độ trễ cực thấp (< 2 mili-giây), hoạt động độc lập không phụ thuộc Internet quốc tế, an toàn bảo mật tuyệt đối.
+
 | Topic | Hướng truyền | Payload mẫu | Mục đích |
 | :--- | :--- | :--- | :--- |
-| `factory/servo/control` | Edge $\rightarrow$ ESP32 | `{"color": "RED"}` | Điều khiển góc quay động cơ gạt |
-| `factory/system/status` | ESP32/Edge $\rightarrow$ Cloud | `{"status": "ONLINE"}` | Báo cáo trạng thái hoạt động thiết bị |
+| `factory/servo/control` | Edge $\rightarrow$ ESP32 | `{"color": "RED", "confidence": 0.98}` | Kích hoạt góc quay Servo gạt sản phẩm ($45^\circ, 90^\circ, 135^\circ$) |
+| `factory/system/status` | ESP32/Edge $\rightarrow$ Cloud | `{"device": "ESP32_Actuator", "status": "ONLINE"}` | Báo cáo trạng thái trực tuyến của thiết bị |
+| `factory/sorting/logs` | Edge $\rightarrow$ Cloud | `{"color": "RED", "confidence": 0.98}` | Đồng bộ nhật ký phân loại vào cơ sở dữ liệu qua MQTT |
 
 ### B. RESTful API Endpoints (Cloud Backend)
 | Phương thức | Endpoint | Phân quyền | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/login` | Public | Đăng nhập lấy JWT Bearer Token |
-| `POST` | `/api/v1/logs` | Public / Edge | Tiếp nhận log phân loại từ Camera Edge |
+| `POST` | `/api/v1/logs` | Public / Edge | Tiếp nhận log phân loại từ Camera Edge qua HTTP |
 | `GET` | `/api/v1/logs` | Public / Manager | Lấy danh sách log có bộ lọc màu, thời gian, ca làm việc |
 | `GET` | `/api/v1/stats` | Worker, Manager | Thống kê số lượng theo màu, năng suất có lọc theo ca |
 | `GET` | `/api/v1/analytics/oee` | Worker, Manager | Phân tích bộ chỉ số OEE công nghiệp ($A \times P \times Q$) |
@@ -196,68 +208,94 @@ iot-sorting-system/
 | `GET` | `/api/v1/analytics/heatmap-matrix` | Worker, Manager | Ma trận phân bổ nhiệt năng suất 24h x 7 ngày & 24h x 3 màu |
 | `GET` | `/api/v1/analytics/servo-health` | Worker, Manager | Thống kê chu kỳ gạt và tỷ lệ hao mòn Servo SG90 |
 | `GET` | `/api/v1/export/csv` | Manager | Tải file báo cáo phân loại dạng CSV |
+| `GET` | `/api/v1/export/excel` | Manager | Tải file báo cáo phân loại dạng Excel đa Sheet (.xlsx) |
 | `GET/POST`| `/api/v1/config` | Manager | Xem và cập nhật tham số cấu hình hệ thống & định mức |
-
 
 ---
 
 ## 5. Hướng dẫn cài đặt & Vận hành
 
-### 1. Khởi chạy Cloud Server (Backend & Dashboard)
+### 1. Khởi chạy Mosquitto Broker & Cloud Server
 
-#### Cách 1: Sử dụng Docker Compose (Khuyên dùng)
+#### Cách 1: Sử dụng Docker Compose trọn gói (Khuyên dùng)
+Khởi động đồng thời cả 4 dịch vụ: **Mosquitto Broker (1883)** + **PostgreSQL (5432)** + **FastAPI Backend (8000)** + **Streamlit Dashboard (8501)**:
 ```bash
 cd cloud_server
 docker compose up -d --build
 ```
 
-#### Cách 2: Chạy trực tiếp qua Virtual Environment
-```bash
-# Kích hoạt môi trường ảo
-.\venv\Scripts\activate
+#### Cách 2: Chạy trực tiếp qua Virtual Environment (Môi trường phát triển)
+1. **Khởi chạy Mosquitto Broker qua Docker:**
+   ```bash
+   docker run -d --name iot_mosquitto_broker -p 1883:1883 -p 9001:9001 -v "${PWD}/cloud_server/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro" eclipse-mosquitto:2.0
+   ```
+2. **Kích hoạt môi trường ảo & Chạy Backend API (Port 8000):**
+   ```bash
+   .\venv\Scripts\activate
+   uvicorn cloud_server.backend.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+3. **Chạy Streamlit SCADA Dashboard (Port 8501):**
+   ```bash
+   streamlit run cloud_server/dashboard/app.py
+   ```
 
-# Chạy Backend API (Port 8000)
-uvicorn cloud_server.backend.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Chạy Streamlit SCADA Dashboard (Port 8501)
-streamlit run cloud_server/dashboard/app.py
-```
-
-- **Tài khoản mặc định:**
-  - **Manager (Toàn quyền):** `admin` / `admin123`
-  - **Worker (Giám sát):** `operator` / `operator123`
-
----
-
-### 2. Vận hành Local Edge Detector
-```bash
-cd local_edge
-python cv_detector.py
-```
+* **Tài khoản mặc định:**
+  * **Manager (Toàn quyền quản trị & Báo cáo):** `admin` / `admin123`
+  * **Worker (Giám sát vận hành trực tiếp):** `operator` / `operator123`
 
 ---
 
-### 3. Chạy giả lập ESP32 trên Wokwi
+### 2. Vận hành Local Edge Detector (Camera AI)
+```bash
+python local_edge/cv_detector.py
+```
+* **Cửa sổ hiển thị:** Tự động mở ở kích thước nhỏ gọn `480x360` (hỗ trợ kéo chuột co giãn tự do hoặc bấm phím `[M]` để chuyển đổi kích thước).
+* **Phím tắt điều khiển:**
+  * `[M]`: Thu nhỏ (480x360) / Phóng to (640x480).
+  * `[R]`, `[Y]`, `[G]`: Bắn thử tín hiệu màu Đỏ, Vàng, Xanh lá.
+  * `[C]`: Xóa bộ đếm số lượng tại node Edge.
+  * `[Q]`: Thoát ứng dụng.
+
+---
+
+### 3. Vận hành Cơ cấu chấp hành ESP32 & Servo
+
+#### A. Khi sử dụng Mạch ESP32 Thật trong mạng LAN:
+1. Mở PowerShell/CMD trên máy tính, gõ lệnh `ipconfig` để lấy địa chỉ IPv4 máy tính trong mạng Wi-Fi (Ví dụ: `192.168.1.15`).
+2. Mở file [main.ino](file:///d:/IOT/esp32_firmware/main.ino) trong Arduino IDE:
+   * Điền tên & mật khẩu Wi-Fi (Băng tần 2.4GHz):
+     ```cpp
+     const char* WIFI_SSID = "Ten_WiFi_Cua_Ban";
+     const char* WIFI_PASSWORD = "Mat_Khau_WiFi";
+     ```
+   * Trỏ địa chỉ Broker về IP máy tính:
+     ```cpp
+     const char* MQTT_BROKER = "192.168.1.15"; // Thay bằng IP máy tính của bạn
+     ```
+3. Nạp code vào ESP32, mở Serial Monitor ở tốc độ `115200 baud` để xác nhận thông báo kết nối thành công.
+
+#### B. Khi sử dụng Giả lập Wokwi:
 1. Mở trang giả lập [Wokwi ESP32](https://wokwi.com/).
-2. Tải cấu hình từ thư mục `esp32_firmware/`:
-   - Sao chép nội dung `diagram.json` vào tab **diagram.json**.
-   - Sao chép mã nguồn `main.ino` vào tab **sketch.ino**.
-3. Nhấn **Start Simulation** để khởi động ESP32 và kết nối MQTT Broker.
+2. Sao chép nội dung `diagram.json` vào tab **diagram.json** và `main.ino` vào tab **sketch.ino**.
+3. Lưu ý: Do Wokwi là máy ảo đám mây, để kết nối với Wokwi hãy đặt `MQTT_BROKER = "broker.hivemq.com"`.
+4. Nhấn **Start Simulation** để chạy mô phỏng.
 
 ---
 
 ## 6. Kịch bản kiểm thử (Testing Checklist)
 
-- [ ] **Test 1: Khởi động Cloud Backend**
-  - Chạy `docker compose up` hoặc khởi động uvicorn.
-  - Truy cập Swagger API Docs tại `http://localhost:8000/docs` để xác thực toàn bộ endpoints hoạt động.
-- [ ] **Test 2: Kết nối ESP32 Wokwi**
-  - Mở Wokwi, khởi động giả lập ESP32 và xác nhận console báo `Connected to MQTT Broker`.
+- [ ] **Test 1: Khởi động Mosquitto Broker & Cloud Backend**
+  * Chạy `docker compose up` hoặc khởi động Mosquitto và Uvicorn.
+  * Truy cập Swagger API Docs tại `http://localhost:8000/docs` xác thực API hoạt động.
+- [ ] **Test 2: Kết nối ESP32 (Mạch thật qua LAN hoặc Wokwi)**
+  * ESP32 kết nối Wi-Fi và kết nối thành công tới Mosquitto Broker cổng 1883.
+  * Serial Monitor báo: `[WiFi] ✅ Đã kết nối Wi-Fi thành công!` và `[MQTT] ✅ Đã kết nối!`.
 - [ ] **Test 3: Nhận diện màu sắc tại Local Edge**
-  - Chạy script `cv_detector.py` trên máy tính, đưa vật thể màu Đỏ / Vàng / Xanh lá vào tầm ngắm camera.
-  - Kiểm tra bounding box và nhãn màu hiển thị chính xác trên khung hình.
+  * Chạy `cv_detector.py`, đưa vật thể màu Đỏ / Vàng / Xanh lá vào tầm ngắm camera.
+  * Kiểm tra Bounding Box, nhãn màu và thanh HUD hiển thị chính xác.
 - [ ] **Test 4: Cơ cấu chấp hành Servo**
-  - Quan sát động cơ Servo trên Wokwi xoay góc tương ứng ($45^\circ$ với Đỏ, $90^\circ$ với Vàng, $135^\circ$ với Xanh) và tự động hồi vị về $0^\circ$ sau 2 giây.
+  * Quan sát động cơ Servo xoay góc tương ứng ($45^\circ$ với Đỏ, $90^\circ$ với Vàng, $135^\circ$ với Xanh).
+  * Servo giữ vị trí gạt trong 2 giây rồi tự động hồi vị về góc an toàn $0^\circ$.
 - [ ] **Test 5: Giám sát SCADA Dashboard**
-  - Truy cập `http://localhost:8501`, đăng nhập tài khoản `operator` hoặc `admin`.
-  - Kiểm tra các thẻ KPI, biểu đồ phân loại và bảng log cập nhật tức thời theo luồng dữ liệu phân loại.
+  * Truy cập `http://localhost:8501`, đăng nhập tài khoản `admin`.
+  * Các thẻ KPI, tỷ lệ phần trăm khay, biểu đồ OEE và nhật ký gạt cập nhật đồng bộ theo thời gian thực.

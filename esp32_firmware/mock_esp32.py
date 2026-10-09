@@ -11,10 +11,11 @@ if hasattr(sys.stdout, 'reconfigure'):
     except Exception:
         pass
 
-MQTT_BROKER = "broker.hivemq.com"
-MQTT_PORT = 1883
-MQTT_TOPIC_SERVO = "factory/servo/control"
-MQTT_TOPIC_STATUS = "factory/system/status"
+import os
+MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_TOPIC_SERVO = os.getenv("MQTT_SERVO_TOPIC", "factory/servo/control")
+MQTT_TOPIC_STATUS = os.getenv("MQTT_STATUS_TOPIC", "factory/system/status")
 
 ANGLE_HOME = 0
 ANGLE_RED = 45
