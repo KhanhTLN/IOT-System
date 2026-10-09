@@ -96,7 +96,7 @@ def render_manager_view():
     # TAB 1: GIÁM SÁT TRỰC TIẾP (STREAMLIT FRAGMENT)
     # ==========================================
     with tab_realtime:
-        @st.fragment(run_every=f"{refresh_sec}s" if auto_refresh else None)
+        @st.fragment(run_every=int(refresh_sec) if auto_refresh else None)
         def render_realtime_tab_content():
             stats = fetch_stats()
             logs = fetch_logs(limit=50)
@@ -464,7 +464,7 @@ def render_manager_view():
         # ----------------------------------------------------
         # 2. KHUNG HIỂN THỊ DỮ LIỆU PHÂN TÍCH GIAI ĐOẠN 2 (FRAGMENT)
         # ----------------------------------------------------
-        @st.fragment(run_every=f"{refresh_sec*2}s" if auto_refresh else None)
+        @st.fragment(run_every=int(refresh_sec * 2) if auto_refresh else None)
         def render_analytics_display_content():
             current_filter = st.session_state.analytics_filter_applied
             
