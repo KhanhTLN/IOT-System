@@ -35,23 +35,25 @@ flowchart TD
     end
 
     subgraph Hardware_Actuator ["Tầng Chấp Hành (ESP32 Thật / Wokwi)"]
-        Broker[("🏠 Eclipse Mosquitto Broker\n(Port 1883 / 9001)")] <--> ESP["⚡ ESP32 Firmware (main.ino)"]
-        ESP --> Servo["⚙️ Servo SG90 (45° / 90° / 135°)"]
+        ESP["⚡ ESP32 Firmware (main.ino)"] --> Servo["⚙️ Servo SG90 (45° / 90° / 135°)"]
     end
 
-    subgraph Cloud_Layer ["Tầng Đám Mây (Cloud Server)"]
+    subgraph Cloud_Layer ["Tầng Đám Mây & Máy Chủ (Cloud Server)"]
+        Broker[("🏠 Eclipse Mosquitto Broker<br/>Port 1883 / 9001")]
         API["🚀 FastAPI Backend (/api/v1/logs)"]
-        DB[("🗄️ Database (PostgreSQL / SQLite)")]
+        DB[("🗄️ Database: PostgreSQL / SQLite")]
         Analytics["📊 Analytics Engine (KPI / Anomaly)"]
         Dashboard["🖥️ Streamlit SCADA Dashboard"]
         
+        Broker <--> API
         API --> DB
         API --> Analytics
         Dashboard <--> API
     end
 
-    MQTT_Pub -->|MQTT Publish: factory/servo/control| Broker
-    MQTT_Pub -->|HTTP POST /api/v1/logs| API
+    MQTT_Pub -->|"MQTT Publish: factory/servo/control"| Broker
+    Broker -->|"MQTT Command"| ESP
+    MQTT_Pub -->|"HTTP POST: /api/v1/logs"| API
 ```
 
 ---
