@@ -209,14 +209,25 @@ class ColorSortingDetector:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 200, 200), 1)
 
         # Hướng dẫn phím tắt góc dưới
-        cv2.putText(frame, "[Q]: Thoat | [R/Y/G]: Ban thu Mau | [C]: Reset Dem", (15, h - 15), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1)
+        cv2.putText(frame, "[Q]: Thoat | [M]: Thu nho/Phong to | [R/Y/G]: Mau | [C]: Reset", (15, h - 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.42, (180, 180, 180), 1)
 
     def run(self):
         """Vòng lặp chính xử lý video theo thời gian thực"""
         has_real_camera = self.init_camera()
+        window_name = "IoT Smart Sorting - OpenCV Edge Node"
+
+        # Khởi tạo cửa sổ cho phép co giãn tự do (WINDOW_NORMAL) thay vì khóa cứng (WINDOW_AUTOSIZE)
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        # Kích thước khởi động mặc định nhỏ gọn để tiện chia màn hình khi demo
+        initial_w, initial_h = 480, 360
+        cv2.resizeWindow(window_name, initial_w, initial_h)
+        is_mini_mode = True
+
         print("\n" + "="*60)
         print("🚀 SCADA COLOR SORTING - COMPUTER VISION RUNNING")
+        print("   - Kéo viền cửa sổ bằng chuột để co giãn tự do")
+        print("   - Phím [M]: Thu nhỏ (480x360) / Phóng to (640x480)")
         print("   - Phím [Q]: Thoát ứng dụng")
         print("   - Phím [R]: Bắn test màu ĐỎ (RED)")
         print("   - Phím [Y]: Bắn test màu VÀNG (YELLOW)")
@@ -251,12 +262,20 @@ class ColorSortingDetector:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
 
                 # Hiển thị cửa sổ
-                cv2.imshow("IoT Smart Sorting - OpenCV Edge Node", output_frame)
+                cv2.imshow(window_name, output_frame)
                 
                 # Bắt phím điều khiển
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q') or key == 27:  # 'q' hoặc ESC
                     break
+                elif key == ord('m'):
+                    is_mini_mode = not is_mini_mode
+                    if is_mini_mode:
+                        cv2.resizeWindow(window_name, 480, 360)
+                        print("[Window] 🔍 Chuyển sang kích thước thu nhỏ (480x360)")
+                    else:
+                        cv2.resizeWindow(window_name, 640, 480)
+                        print("[Window] 🔍 Chuyển sang kích thước gốc (640x480)")
                 elif key == ord('r'):
                     print("[Manual Trigger] 🔴 Bắn test màu RED")
                     dispatcher.dispatch_sorting_event("RED", 0.99)
