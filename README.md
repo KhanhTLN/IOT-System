@@ -30,8 +30,8 @@ Mô hình hệ thống tuân theo chuẩn kiến trúc IoT 4 cấp độ (Level 
 ```mermaid
 flowchart TD
     subgraph Local_Edge ["Tầng Cận Biên (Local Edge Node)"]
-        Cam["📸 Camera / Băng Chuyền"] --> CV["🧠 cv_detector.py (OpenCV HSV)"]
-        CV --> MQTT_Pub["📡 mqtt_publisher.py"]
+        Cam["📷 Camera / Băng Chuyền"] --> CV["🧠 cv_detector.py (OpenCV HSV)"]
+        CV --> MQTT_Pub["🚀 mqtt_publisher.py"]
     end
 
     subgraph Hardware_Actuator ["Tầng Chấp Hành (ESP32 Thật / Wokwi)"]
