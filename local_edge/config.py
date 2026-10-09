@@ -65,7 +65,7 @@ TRIGGER_COOLDOWN_SECONDS = float(os.getenv("TRIGGER_COOLDOWN_SECONDS", "2.0"))
 # ==========================================
 # 4. MQTT BROKER CONFIGURATION
 # ==========================================
-MQTT_BROKER = os.getenv("MQTT_BROKER", "broker.hivemq.com")
+MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 MQTT_SERVO_TOPIC = os.getenv("MQTT_SERVO_TOPIC", "factory/servo/control")
 MQTT_STATUS_TOPIC = os.getenv("MQTT_STATUS_TOPIC", "factory/edge/status")
