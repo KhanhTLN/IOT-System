@@ -6,10 +6,15 @@
 // ==========================================
 // 1. CẤU HÌNH WI-FI & MQTT BROKER
 // ==========================================
-const char* WIFI_SSID = "Wokwi-GUEST";   // SSID mặc định của Wokwi
+// Nếu dùng Wokwi: giữ "Wokwi-GUEST", pass ""
+// Nếu dùng Mạch ESP32 thật: Điền SSID và mật khẩu Wi-Fi của bạn (2.4GHz)
+const char* WIFI_SSID = "Wokwi-GUEST";
 const char* WIFI_PASSWORD = "";
 
-const char* MQTT_BROKER = "broker.hivemq.com";
+// CẤU HÌNH ECLIPSE MOSQUITTO BROKER:
+// - Với Mạch Thật: Điền IP máy tính chạy Mosquitto trong mạng LAN (Lệnh Windows: ipconfig, VD: "192.168.1.15")
+// - Với Wokwi giả lập: Điền "broker.hivemq.com" (Do máy ảo cloud Wokwi không nhìn thấy IP LAN cá nhân)
+const char* MQTT_BROKER = "192.168.1.15";
 const int   MQTT_PORT = 1883;
 const char* MQTT_TOPIC_SERVO = "factory/servo/control";
 const char* MQTT_TOPIC_STATUS = "factory/system/status";

@@ -410,7 +410,7 @@ def get_configs(db: Session = Depends(get_db)):
 
 # --- MQTT CONSUMER ---
 def start_mqtt_consumer():
-    mqtt_broker = os.getenv("MQTT_BROKER", "broker.hivemq.com")
+    mqtt_broker = os.getenv("MQTT_BROKER", "localhost")
     mqtt_port = int(os.getenv("MQTT_PORT", "1883"))
     mqtt_topic = os.getenv("MQTT_TOPIC", "factory/sorting/logs")
 
