@@ -30,20 +30,20 @@ Mô hình hệ thống tuân theo chuẩn kiến trúc IoT 4 cấp độ (Level 
 ```mermaid
 flowchart TD
     subgraph Local_Edge ["Tầng Cận Biên (Local Edge Node)"]
-        Cam["📷 Camera / Băng Chuyền"] --> CV["🧠 cv_detector.py (OpenCV HSV)"]
-        CV --> MQTT_Pub["🚀 mqtt_publisher.py"]
+        Cam[" Camera / Băng Chuyền"] --> CV[" cv_detector.py (OpenCV HSV)"]
+        CV --> MQTT_Pub[" mqtt_publisher.py"]
     end
 
     subgraph Hardware_Actuator ["Tầng Chấp Hành (ESP32 Thật / Wokwi)"]
-        ESP["⚡ ESP32 Firmware (main.ino)"] --> Servo["⚙️ Servo SG90 (45° / 90° / 135°)"]
+        ESP[" ESP32 Firmware (main.ino)"] --> Servo[" Servo SG90 (45° / 90° / 135°)"]
     end
 
     subgraph Cloud_Layer ["Tầng Đám Mây & Máy Chủ (Cloud Server)"]
-        Broker[("🏠 Eclipse Mosquitto Broker<br/>Port 1883 / 9001")]
-        API["🚀 FastAPI Backend (/api/v1/logs)"]
-        DB[("🗄️ Database: PostgreSQL / SQLite")]
-        Analytics["📊 Analytics Engine (KPI / Anomaly)"]
-        Dashboard["🖥️ Streamlit SCADA Dashboard"]
+        Broker[(" Eclipse Mosquitto Broker<br/>Port 1883 / 9001")]
+        API[" FastAPI Backend (/api/v1/logs)"]
+        DB[(" Database: PostgreSQL / SQLite")]
+        Analytics[" Analytics Engine (KPI / Anomaly)"]
+        Dashboard[" Streamlit SCADA Dashboard"]
         
         Broker <--> API
         API --> DB
