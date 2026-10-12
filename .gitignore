@@ -58,3 +58,12 @@ desktop.ini
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Arduino / ESP32 Secrets
+secrets.h
+**/secrets.h
+!secrets.example.h
+!**/secrets.example.h
+
+# Arduino local sketchbook
+arduino_sketchbook/
