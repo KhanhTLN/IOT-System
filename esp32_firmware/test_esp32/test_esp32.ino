@@ -17,20 +17,13 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include "secrets.h"
 
 // ==========================================
-// 1. CẤU HÌNH THÔNG SỐ (Bạn chỉnh ở đây)
+// 1. CẤU HÌNH THÔNG SỐ
 // ==========================================
-const char* WIFI_SSID     = "P05"; // Thay bằng tên Wi-Fi nhà bạn (2.4GHz)
-const char* WIFI_PASSWORD = "12345678@";            // Mật khẩu Wi-Fi
-
-// Broker MQTT: 
-// - Dùng IP LAN máy tính nếu có Mosquitto (VD: "192.168.1.15")
-// - Hoặc dùng public broker để test không cần cài Mosquitto: "broker.hivemq.com"
-const char* MQTT_BROKER   = "broker.hivemq.com";
-const int   MQTT_PORT     = 1883;
-const char* TOPIC_CONTROL = "factory/servo/control";
-const char* TOPIC_STATUS  = "factory/system/status";
+// Các thông số WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT,
+// TOPIC_CONTROL, TOPIC_STATUS được quản lý an toàn trong file "secrets.h"
 
 // Chân đèn LED tích hợp sẵn trên board ESP32 (Hầu hết các board ESP32 là GPIO 2)
 const int ONBOARD_LED_PIN = 2;
