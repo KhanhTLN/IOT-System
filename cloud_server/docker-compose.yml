@@ -50,7 +50,7 @@ services:
     container_name: iot_dashboard_ui
     restart: always
     ports:
-      - "8501:8501"
+      - "80:8501"
     environment:
       - API_BASE_URL=http://backend:8000
     depends_on:
