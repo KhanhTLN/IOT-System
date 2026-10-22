@@ -299,3 +299,7 @@ python local_edge/cv_detector.py
 - [ ] **Test 5: Giám sát SCADA Dashboard**
   * Truy cập `http://localhost:8501`, đăng nhập tài khoản `admin`.
   * Các thẻ KPI, tỷ lệ phần trăm khay, biểu đồ OEE và nhật ký gạt cập nhật đồng bộ theo thời gian thực.
+
+**Written by Khanh Tran - github : KhanhTLN**
+
+...
