@@ -20,7 +20,8 @@ def send_single_log(color=None, confidence=None, api_url=API_URL):
         response = requests.post(api_url, json=payload, timeout=3)
         if response.status_code == 201:
             data = response.json()
-            print(f"✅ [GỬI THÀNH CÔNG] ID: {data['id']} | Màu: {data['color_label']} | Confidence: {data['confidence']}")
+            curr_time = time.strftime('%H:%M:%S')
+            print(f"✅ [{curr_time} GỬI THÀNH CÔNG] ID: {data['id']} | Màu: {data['color_label']} | Confidence: {data['confidence']}")
         else:
             print(f"❌ [LỖI API {response.status_code}]: {response.text}")
     except Exception as e:
