@@ -84,7 +84,7 @@ class EdgeDispatcher:
         except Exception as e:
             print(f"[Cloud Sync Error] Không thể gửi HTTP log tới Cloud: {e}")
 
-    def dispatch_sorting_event(self, color_label: str, confidence: float = 1.0):
+    def dispatch_sorting_event(self, color_label: str, confidence: float = 1.0, track_id: int = None):
         """
         Bắn tín hiệu đồng thời:
         1. Gửi MQTT tới ESP32 điều khiển gạt Servo
@@ -96,9 +96,12 @@ class EdgeDispatcher:
             "confidence": round(confidence, 3),
             "timestamp": datetime.datetime.now().isoformat()
         }
+        if track_id is not None:
+            mqtt_payload["track_id"] = track_id
         try:
             self.client.publish(MQTT_SERVO_TOPIC, json.dumps(mqtt_payload), qos=1)
-            print(f"[Dispatch] 📡 Bắn MQTT -> ESP32: {mqtt_payload['color']} (Conf: {confidence:.2f})")
+            track_tag = f" [ID:{track_id}]" if track_id is not None else ""
+            print(f"[Dispatch] 📡 Bắn MQTT -> ESP32:{track_tag} {mqtt_payload['color']} (Conf: {confidence:.2f})")
         except Exception as e:
             print(f"[Dispatch MQTT Error] {e}")
 

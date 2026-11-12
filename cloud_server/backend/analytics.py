@@ -62,7 +62,7 @@ def calculate_stats(
     logs: List[SortingLog] = query.order_by(SortingLog.id.asc()).all()
     total_count = len(logs)
     
-    color_counts = {"RED": 0, "YELLOW": 0, "GREEN": 0, "OTHER": 0}
+    color_counts = {"RED": 0, "YELLOW": 0, "BLUE": 0, "GREEN": 0, "OTHER": 0}
     for log in logs:
         label = log.color_label.upper()
         if label in color_counts:
@@ -72,7 +72,7 @@ def calculate_stats(
             
     # Tỷ lệ %
     percentage = {}
-    for color in ["RED", "YELLOW", "GREEN"]:
+    for color in ["RED", "YELLOW", "BLUE", "GREEN"]:
         percentage[color] = round((color_counts[color] / total_count * 100), 2) if total_count > 0 else 0.0
 
     # Năng suất sản phẩm / phút trong 10 phút gần nhất (GMT+7)
@@ -94,6 +94,7 @@ def calculate_stats(
         "counts": {
             "RED": color_counts["RED"],
             "YELLOW": color_counts["YELLOW"],
+            "BLUE": color_counts["BLUE"] + color_counts["GREEN"],
             "GREEN": color_counts["GREEN"]
         },
         "percentages": percentage,
@@ -111,7 +112,7 @@ def calculate_servo_health(db: Session, max_rated_cycles: int = 10000) -> Dict[s
     
     red_cycles = sum(1 for l in all_logs if l.color_label.upper() == "RED")
     yellow_cycles = sum(1 for l in all_logs if l.color_label.upper() == "YELLOW")
-    green_cycles = sum(1 for l in all_logs if l.color_label.upper() == "GREEN")
+    blue_cycles = sum(1 for l in all_logs if l.color_label.upper() in ["BLUE", "GREEN"])
 
     def get_status(wear_pct: float) -> str:
         if wear_pct >= 90.0:
@@ -124,12 +125,12 @@ def calculate_servo_health(db: Session, max_rated_cycles: int = 10000) -> Dict[s
     
     red_wear = min(100.0, round((red_cycles / (max_rated_cycles / 3)) * 100, 2))
     yellow_wear = min(100.0, round((yellow_cycles / (max_rated_cycles / 3)) * 100, 2))
-    green_wear = min(100.0, round((green_cycles / (max_rated_cycles / 3)) * 100, 2))
+    blue_wear = min(100.0, round((blue_cycles / (max_rated_cycles / 3)) * 100, 2))
 
     # Đánh giá cân bằng tải trọng (Load Balancing)
     imbalance_warning = None
     if total_cycles > 20:
-        max_c = max(red_cycles, yellow_cycles, green_cycles)
+        max_c = max(red_cycles, yellow_cycles, blue_cycles)
         if (max_c / total_cycles) > 0.65:
             heaviest_color = "ĐỎ (45°)" if max_c == red_cycles else ("VÀNG (90°)" if max_c == yellow_cycles else "XANH (135°)")
             imbalance_warning = f"Tải trọng cơ khí đang lệch nhiều về khay {heaviest_color} ({max_c/total_cycles*100:.1f}% tổng số lần gạt)."
@@ -152,11 +153,17 @@ def calculate_servo_health(db: Session, max_rated_cycles: int = 10000) -> Dict[s
                 "wear_pct": yellow_wear,
                 "status": get_status(yellow_wear)
             },
+            "BLUE": {
+                "angle": 135,
+                "cycles": blue_cycles,
+                "wear_pct": blue_wear,
+                "status": get_status(blue_wear)
+            },
             "GREEN": {
                 "angle": 135,
-                "cycles": green_cycles,
-                "wear_pct": green_wear,
-                "status": get_status(green_wear)
+                "cycles": blue_cycles,
+                "wear_pct": blue_wear,
+                "status": get_status(blue_wear)
             }
         },
         "imbalance_warning": imbalance_warning
@@ -273,7 +280,7 @@ def calculate_target_vs_actual(
     # Đếm theo từng màu
     red_c = sum(1 for l in logs if l.color_label.upper() == "RED")
     yellow_c = sum(1 for l in logs if l.color_label.upper() == "YELLOW")
-    green_c = sum(1 for l in logs if l.color_label.upper() == "GREEN")
+    blue_c = sum(1 for l in logs if l.color_label.upper() in ["BLUE", "GREEN"])
 
     target_per_color = round(target_shift / 3.0)
 
@@ -309,7 +316,8 @@ def calculate_target_vs_actual(
         "color_targets": {
             "RED": {"actual": red_c, "target": target_per_color, "pct": round(red_c / max(1, target_per_color) * 100, 1)},
             "YELLOW": {"actual": yellow_c, "target": target_per_color, "pct": round(yellow_c / max(1, target_per_color) * 100, 1)},
-            "GREEN": {"actual": green_c, "target": target_per_color, "pct": round(green_c / max(1, target_per_color) * 100, 1)}
+            "BLUE": {"actual": blue_c, "target": target_per_color, "pct": round(blue_c / max(1, target_per_color) * 100, 1)},
+            "GREEN": {"actual": blue_c, "target": target_per_color, "pct": round(blue_c / max(1, target_per_color) * 100, 1)}
         }
     }
 
@@ -332,8 +340,8 @@ def calculate_hourly_heatmap_matrix(db: Session, days: int = 7) -> Dict[str, Any
     matrix_days = [[0 for _ in range(24)] for _ in range(7)]
     
     # 2. Ma trận 24 Giờ x 3 Màu
-    colors_labels = ["Đỏ (RED)", "Vàng (YELLOW)", "Xanh (GREEN)"]
-    color_map_idx = {"RED": 0, "YELLOW": 1, "GREEN": 2}
+    colors_labels = ["Đỏ (RED)", "Vàng (YELLOW)", "Xanh dương (BLUE)"]
+    color_map_idx = {"RED": 0, "YELLOW": 1, "BLUE": 2, "GREEN": 2}
     matrix_colors = [[0 for _ in range(24)] for _ in range(3)]
 
     for log in logs:

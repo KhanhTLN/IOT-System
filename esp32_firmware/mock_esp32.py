@@ -20,6 +20,7 @@ MQTT_TOPIC_STATUS = os.getenv("MQTT_STATUS_TOPIC", "factory/system/status")
 ANGLE_HOME = 0
 ANGLE_RED = 45
 ANGLE_YELLOW = 90
+ANGLE_BLUE = 135
 ANGLE_GREEN = 135
 
 def on_connect(client, userdata, flags, rc):
@@ -56,6 +57,9 @@ def on_message(client, userdata, msg):
         elif color == "YELLOW":
             target_angle = ANGLE_YELLOW
             emoji = "🟡"
+        elif color == "BLUE":
+            target_angle = ANGLE_BLUE
+            emoji = "🔵"
         elif color == "GREEN":
             target_angle = ANGLE_GREEN
             emoji = "🟢"

@@ -20,6 +20,14 @@ COLOR_PALETTE = {
         "border": "#FBBF24",
         "badge": "🟡 VÀNG"
     },
+    "BLUE": {
+        "name": "Xanh dương (BLUE)",
+        "hex": "#3B82F6",
+        "glow": "rgba(59, 130, 246, 0.25)",
+        "bg": "rgba(59, 130, 246, 0.12)",
+        "border": "#3B82F6",
+        "badge": "🔵 XANH DƯƠNG"
+    },
     "GREEN": {
         "name": "Xanh (GREEN)",
         "hex": "#34D399",

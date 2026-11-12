@@ -1,0 +1,17 @@
+# ========================================================
+# YOLOv8 Dataset Specification - IoT Smart Sorting System
+# ========================================================
+# Đường dẫn gốc (tương đối so với file data.yaml này)
+path: .
+
+# Các tập dữ liệu con
+train: images/train
+val: images/val
+test: images/test
+
+# Danh mục phân loại 3 màu sản phẩm
+names:
+  0: RED
+  1: YELLOW
+  2: BLUE
+
