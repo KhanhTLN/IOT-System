@@ -32,8 +32,8 @@ COLOR_THRESHOLDS = {
     "YELLOW": [
         {"lower": np.array([15, 100, 100]), "upper": np.array([35, 255, 255])}
     ],
-    "GREEN": [
-        {"lower": np.array([36, 60, 60]), "upper": np.array([85, 255, 255])}
+    "BLUE": [
+        {"lower": np.array([95, 80, 50]), "upper": np.array([130, 255, 255])}
     ]
 }
 
@@ -41,7 +41,8 @@ COLOR_THRESHOLDS = {
 DISPLAY_COLORS = {
     "RED": (0, 0, 255),       # Đỏ BGR
     "YELLOW": (0, 220, 255),   # Vàng BGR
-    "GREEN": (0, 255, 0),     # Xanh lá BGR
+    "BLUE": (255, 60, 0),     # Xanh dương BGR
+    "GREEN": (0, 255, 0),     # Xanh lá BGR (Tùy chọn)
     "TEXT": (255, 255, 255),   # Trắng
     "ROI_LINE": (255, 165, 0) # Cam ROI
 }
@@ -61,6 +62,24 @@ ROI_Y_END = 0.75
 
 # Thời gian nghỉ chống kích hoạt trùng lặp cho cùng 1 vật thể (Debounce Cooldown tính bằng giây)
 TRIGGER_COOLDOWN_SECONDS = float(os.getenv("TRIGGER_COOLDOWN_SECONDS", "2.0"))
+
+# ==========================================
+# 3b. DEEP LEARNING (YOLO ONNX) & TRACKER CONFIGURATION
+# ==========================================
+_LOCAL_EDGE_DIR = Path(__file__).resolve().parent
+_raw_model_path = os.getenv("YOLO_MODEL_PATH", "models/best.onnx")
+YOLO_MODEL_PATH = str((_LOCAL_EDGE_DIR / _raw_model_path).resolve()) if not Path(_raw_model_path).is_absolute() else _raw_model_path
+
+# Chọn engine nhận diện chính: "YOLO" (tự động lùi về HSV nếu thiếu model) hoặc "HSV"
+DETECTOR_BACKEND = os.getenv("DETECTOR_BACKEND", "YOLO").strip().upper()
+YOLO_CONF_THRESHOLD = float(os.getenv("YOLO_CONF_THRESHOLD", "0.65"))
+YOLO_IOU_THRESHOLD = float(os.getenv("YOLO_IOU_THRESHOLD", "0.45"))
+YOLO_CLASSES_FALLBACK = ["RED", "YELLOW", "BLUE"]
+
+# Cấu hình Centroid Object Tracker
+TRACKER_MAX_DISAPPEARED = int(os.getenv("TRACKER_MAX_DISAPPEARED", "15"))
+TRACKER_MAX_DISTANCE = float(os.getenv("TRACKER_MAX_DISTANCE", "85.0"))
+TRACKER_MIN_HITS = int(os.getenv("TRACKER_MIN_HITS", "2"))
 
 # ==========================================
 # 4. MQTT BROKER CONFIGURATION

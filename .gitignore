@@ -67,3 +67,16 @@ secrets.h
 
 # Arduino local sketchbook
 arduino_sketchbook/
+
+# Deep Learning Datasets & Large Model Weights
+local_edge/datasets/images/
+local_edge/datasets/labels/
+local_edge/datasets/raw/
+*.pt
+*.onnx
+!local_edge/models/.gitkeep
+!local_edge/datasets/.gitkeep
+!local_edge/datasets/data.yaml
+runs/
+local_edge/runs/
+

@@ -19,7 +19,8 @@ const int SERVO_PIN = 18;  // Chân PWM điều khiển Servo SG90
 const int ANGLE_HOME   = 0;    // Vị trí nghỉ / Chờ ban đầu
 const int ANGLE_RED    = 45;   // Góc gạt hàng màu ĐỎ
 const int ANGLE_YELLOW = 90;   // Góc gạt hàng màu VÀNG
-const int ANGLE_GREEN  = 135;  // Góc gạt hàng màu XANH LÁ
+const int ANGLE_BLUE   = 135;  // Góc gạt hàng màu XANH DƯƠNG (BLUE)
+const int ANGLE_GREEN  = 135;  // Góc gạt hàng màu XANH LÁ (GREEN - Dự phòng tương thích)
 
 const unsigned long SERVO_RESET_DELAY_MS = 2000; // Thời gian giữ góc gạt trước khi về 0 độ (2 giây)
 
@@ -90,7 +91,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     upperMsg.toUpperCase();
     if (upperMsg.indexOf("RED") >= 0) colorStr = "RED";
     else if (upperMsg.indexOf("YELLOW") >= 0) colorStr = "YELLOW";
-    else if (upperMsg.indexOf("GREEN") >= 0) colorStr = "GREEN";
+    else if (upperMsg.indexOf("BLUE") >= 0) colorStr = "BLUE";
+    else if (upperMsg.indexOf("GREEN") >= 0) colorStr = "BLUE";
   }
 
   colorStr.toUpperCase();
@@ -103,9 +105,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     } else if (colorStr == "YELLOW") {
       targetAngle = ANGLE_YELLOW;
       Serial.println("🟡 [Action] KÍCH HOẠT GẠT SẢN PHẨM: VÀNG (YELLOW) -> Quay 90°");
-    } else if (colorStr == "GREEN") {
-      targetAngle = ANGLE_GREEN;
-      Serial.println("🟢 [Action] KÍCH HOẠT GẠT SẢN PHẨM: XANH LÁ (GREEN) -> Quay 135°");
+    } else if (colorStr == "BLUE" || colorStr == "GREEN") {
+      targetAngle = ANGLE_BLUE;
+      Serial.println("🔵 [Action] KÍCH HOẠT GẠT SẢN PHẨM: XANH DƯƠNG (BLUE) -> Quay 135°");
     } else {
       Serial.print("⚠️ [Action] Màu không xác định: ");
       Serial.println(colorStr);

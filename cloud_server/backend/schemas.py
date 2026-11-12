@@ -31,7 +31,7 @@ class TokenResponse(BaseModel):
 
 # --- Sorting Log Schemas ---
 class SortingLogCreate(BaseModel):
-    color_label: str = Field(..., description="Nhãn màu: RED, YELLOW, hoặc GREEN")
+    color_label: str = Field(..., description="Nhãn màu: RED, YELLOW, BLUE, hoặc GREEN")
     confidence: Optional[float] = Field(default=1.0, ge=0.0, le=1.0, description="Độ tin cậy từ 0.0 đến 1.0")
 
 class SortingLogResponse(BaseModel):
