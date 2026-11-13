@@ -1,0 +1,274 @@
+# Sample only: set server to the broker reachable from the exporter.
+# If sharing the existing Docker network: tcp://mosquitto:1883.
+mqtt:
+  server: tcp://127.0.0.1:1883
+  topic_path: factory/esp32/+/telemetry
+  device_id_regex: '^factory/esp32/(?P<deviceid>[^/]+)/telemetry$'
+  qos: 0
+cache:
+  timeout: 30s
+metrics:
+  - prom_name: esp32_telemetry_schema_version
+    mqtt_name: schema_version
+    help: Telemetry schema version.
+    type: gauge
+  - prom_name: esp32_uptime_seconds
+    mqtt_name: uptime_seconds
+    help: Uptime since boot in seconds.
+    type: gauge
+  - prom_name: esp32_wifi_rssi_dbm
+    mqtt_name: wifi_rssi_dbm
+    help: WiFi RSSI in dBm.
+    type: gauge
+  - prom_name: esp32_free_heap_bytes
+    mqtt_name: free_heap_bytes
+    help: Available ESP32 heap in bytes.
+    type: gauge
+  - prom_name: esp32_min_free_heap_bytes
+    mqtt_name: min_free_heap_bytes
+    help: Lowest available heap since boot in bytes.
+    type: gauge
+  - prom_name: esp32_cpu_frequency_mhz
+    mqtt_name: cpu_frequency_mhz
+    help: CPU frequency in MHz, not utilization.
+    type: gauge
+  - prom_name: esp32_wifi_connected
+    mqtt_name: wifi_connected
+    help: WiFi state at publication, not a remote liveness signal.
+    type: gauge
+  - prom_name: esp32_mqtt_connected
+    mqtt_name: mqtt_connected
+    help: MQTT state at publication, not a remote liveness signal.
+    type: gauge
+  - prom_name: esp32_mqtt_connect_attempts_total
+    mqtt_name: mqtt_connect_attempts_total
+    help: Observed MQTT connection attempts.
+    type: counter
+  - prom_name: esp32_mqtt_connections_total
+    mqtt_name: mqtt_connections_total
+    help: Observed successful MQTT connections including the first connection.
+    type: counter
+  - prom_name: esp32_mqtt_connect_failures_total
+    mqtt_name: mqtt_connect_failures_total
+    help: Observed failed MQTT connection attempts.
+    type: counter
+  - prom_name: esp32_telemetry_publish_success_total
+    mqtt_name: telemetry_publish_success_total
+    help: Local telemetry writes before this sample, not application acknowledgments.
+    type: counter
+  - prom_name: esp32_telemetry_publish_failures_total
+    mqtt_name: telemetry_publish_failures_total
+    help: Telemetry formatting or local send failures before this sample.
+    type: counter
+  - prom_name: esp32_telemetry_last_publish_duration_ms
+    mqtt_name: telemetry_last_publish_duration_ms
+    help: Duration of the preceding formatting and send operation in milliseconds.
+    type: gauge
+  - prom_name: esp32_auto_test_mode
+    mqtt_name: auto_test_mode
+    help: Existing auto test mode, 1=enabled.
+    type: gauge
+  - prom_name: esp32_live_monitor_mode
+    mqtt_name: live_monitor_mode
+    help: Existing Serial live monitor mode, 1=enabled.
+    type: gauge
+  - prom_name: camera_edge_messages_total
+    mqtt_name: camera_messages_total
+    help: Observed control callback messages including manually published commands.
+    type: counter
+  - prom_name: camera_edge_recognized_colors_total
+    mqtt_name: camera_recognized_colors_total
+    help: Colors recognized by the unchanged firmware parser.
+    type: counter
+  - prom_name: camera_edge_unrecognized_colors_total
+    mqtt_name: camera_unrecognized_colors_total
+    help: Unrecognized labels, without changing how the command is handled.
+    type: counter
+  - prom_name: camera_edge_invalid_confidence_total
+    mqtt_name: camera_invalid_confidence_total
+    help: Provided confidence values that are not finite numeric values in 0..1.
+    type: counter
+  - prom_name: camera_edge_message_seen
+    mqtt_name: camera_message_seen
+    help: At least one control callback message observed since boot.
+    type: gauge
+  - prom_name: camera_edge_last_message_age_seconds
+    mqtt_name: camera_last_message_age_seconds
+    help: Age of last callback message, -1 before the first message.
+    type: gauge
+  - prom_name: camera_edge_last_confidence
+    mqtt_name: camera_last_confidence
+    help: Last received numeric confidence, -1 if missing or invalid.
+    type: gauge
+  - prom_name: camera_edge_last_color_code
+    mqtt_name: camera_last_color_code
+    help: Parsed label 0=unknown 1=RED 2=BLUE/GREEN/XANH 3=YELLOW/VANG.
+    type: gauge
+  - prom_name: servo_red_state
+    mqtt_name: red.state
+    help: Original station state, 0=IDLE 1=ARMED 2=SORTING_WAIT_DROP.
+    type: gauge
+  - prom_name: servo_red_commanded_angle_degrees
+    mqtt_name: red.servo_commanded_angle_degrees
+    help: Last software commanded angle, not measured shaft position.
+    type: gauge
+  - prom_name: servo_red_pwm_attached
+    mqtt_name: red.servo_pwm_attached
+    help: Software PWM attachment, not proof of physical connectivity.
+    type: gauge
+  - prom_name: servo_red_sort_starts_total
+    mqtt_name: red.sort_starts_total
+    help: Observed sorting commands, including auto test mode.
+    type: counter
+  - prom_name: servo_red_sort_retriggers_total
+    mqtt_name: red.sort_retriggers_total
+    help: Observed new sorting commands before a home command.
+    type: counter
+  - prom_name: servo_red_bin_confirmations_total
+    mqtt_name: red.bin_confirmations_total
+    help: Original bin-sensor return branch executed, not a color correctness measurement.
+    type: counter
+  - prom_name: servo_red_timeouts_total
+    mqtt_name: red.timeouts_total
+    help: Original safety timeout return branch executed.
+    type: counter
+  - prom_name: servo_red_emergency_home_commands_total
+    mqtt_name: red.emergency_home_commands_total
+    help: Home commands issued by the existing Serial emergency command.
+    type: counter
+  - prom_name: servo_red_home_commands_total
+    mqtt_name: red.home_commands_total
+    help: Observed home commands excluding startup initialization.
+    type: counter
+  - prom_name: servo_red_last_sort_duration_seconds
+    mqtt_name: red.last_sort_duration_seconds
+    help: Time from latest sort command to home command, -1 without a pending observed sort.
+    type: gauge
+  - prom_name: servo_blue_state
+    mqtt_name: blue.state
+    help: Original station state, 0=IDLE 1=ARMED 2=SORTING_WAIT_DROP.
+    type: gauge
+  - prom_name: servo_blue_commanded_angle_degrees
+    mqtt_name: blue.servo_commanded_angle_degrees
+    help: Last software commanded angle, not measured shaft position.
+    type: gauge
+  - prom_name: servo_blue_pwm_attached
+    mqtt_name: blue.servo_pwm_attached
+    help: Software PWM attachment, not proof of physical connectivity.
+    type: gauge
+  - prom_name: servo_blue_sort_starts_total
+    mqtt_name: blue.sort_starts_total
+    help: Observed sorting commands, including auto test mode.
+    type: counter
+  - prom_name: servo_blue_sort_retriggers_total
+    mqtt_name: blue.sort_retriggers_total
+    help: Observed new sorting commands before a home command.
+    type: counter
+  - prom_name: servo_blue_bin_confirmations_total
+    mqtt_name: blue.bin_confirmations_total
+    help: Original bin-sensor return branch executed, not a color correctness measurement.
+    type: counter
+  - prom_name: servo_blue_timeouts_total
+    mqtt_name: blue.timeouts_total
+    help: Original safety timeout return branch executed.
+    type: counter
+  - prom_name: servo_blue_emergency_home_commands_total
+    mqtt_name: blue.emergency_home_commands_total
+    help: Home commands issued by the existing Serial emergency command.
+    type: counter
+  - prom_name: servo_blue_home_commands_total
+    mqtt_name: blue.home_commands_total
+    help: Observed home commands excluding startup initialization.
+    type: counter
+  - prom_name: servo_blue_last_sort_duration_seconds
+    mqtt_name: blue.last_sort_duration_seconds
+    help: Time from latest sort command to home command, -1 without a pending observed sort.
+    type: gauge
+  - prom_name: servo_yellow_state
+    mqtt_name: yellow.state
+    help: Original station state, 0=IDLE 1=ARMED 2=SORTING_WAIT_DROP.
+    type: gauge
+  - prom_name: servo_yellow_commanded_angle_degrees
+    mqtt_name: yellow.servo_commanded_angle_degrees
+    help: Last software commanded angle, not measured shaft position.
+    type: gauge
+  - prom_name: servo_yellow_pwm_attached
+    mqtt_name: yellow.servo_pwm_attached
+    help: Software PWM attachment, not proof of physical connectivity.
+    type: gauge
+  - prom_name: servo_yellow_sort_starts_total
+    mqtt_name: yellow.sort_starts_total
+    help: Observed sorting commands, including auto test mode.
+    type: counter
+  - prom_name: servo_yellow_sort_retriggers_total
+    mqtt_name: yellow.sort_retriggers_total
+    help: Observed new sorting commands before a home command.
+    type: counter
+  - prom_name: servo_yellow_bin_confirmations_total
+    mqtt_name: yellow.bin_confirmations_total
+    help: Original bin-sensor return branch executed, not a color correctness measurement.
+    type: counter
+  - prom_name: servo_yellow_timeouts_total
+    mqtt_name: yellow.timeouts_total
+    help: Original safety timeout return branch executed.
+    type: counter
+  - prom_name: servo_yellow_emergency_home_commands_total
+    mqtt_name: yellow.emergency_home_commands_total
+    help: Home commands issued by the existing Serial emergency command.
+    type: counter
+  - prom_name: servo_yellow_home_commands_total
+    mqtt_name: yellow.home_commands_total
+    help: Observed home commands excluding startup initialization.
+    type: counter
+  - prom_name: servo_yellow_last_sort_duration_seconds
+    mqtt_name: yellow.last_sort_duration_seconds
+    help: Time from latest sort command to home command, -1 without a pending observed sort.
+    type: gauge
+  - prom_name: esp32_ir1_blocked
+    mqtt_name: ir1.blocked
+    help: Sampled IR input, 1=LOW/blocked.
+    type: gauge
+  - prom_name: esp32_ir1_falling_edges_total
+    mqtt_name: ir1.falling_edges_total
+    help: Observed HIGH to LOW transitions using the original sampled input.
+    type: counter
+  - prom_name: esp32_ir2_blocked
+    mqtt_name: ir2.blocked
+    help: Sampled IR input, 1=LOW/blocked.
+    type: gauge
+  - prom_name: esp32_ir2_falling_edges_total
+    mqtt_name: ir2.falling_edges_total
+    help: Observed HIGH to LOW transitions using the original sampled input.
+    type: counter
+  - prom_name: esp32_ir3_blocked
+    mqtt_name: ir3.blocked
+    help: Sampled IR input, 1=LOW/blocked.
+    type: gauge
+  - prom_name: esp32_ir3_falling_edges_total
+    mqtt_name: ir3.falling_edges_total
+    help: Observed HIGH to LOW transitions using the original sampled input.
+    type: counter
+  - prom_name: esp32_ir4_blocked
+    mqtt_name: ir4.blocked
+    help: Sampled IR input, 1=LOW/blocked.
+    type: gauge
+  - prom_name: esp32_ir4_falling_edges_total
+    mqtt_name: ir4.falling_edges_total
+    help: Observed HIGH to LOW transitions using the original sampled input.
+    type: counter
+  - prom_name: esp32_ir5_blocked
+    mqtt_name: ir5.blocked
+    help: Sampled IR input, 1=LOW/blocked.
+    type: gauge
+  - prom_name: esp32_ir5_falling_edges_total
+    mqtt_name: ir5.falling_edges_total
+    help: Observed HIGH to LOW transitions using the original sampled input.
+    type: counter
+  - prom_name: esp32_ir6_blocked
+    mqtt_name: ir6.blocked
+    help: Sampled IR input, 1=LOW/blocked.
+    type: gauge
+  - prom_name: esp32_ir6_falling_edges_total
+    mqtt_name: ir6.falling_edges_total
+    help: Observed HIGH to LOW transitions using the original sampled input.
+    type: counter

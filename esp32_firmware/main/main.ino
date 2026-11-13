@@ -4,6 +4,9 @@
 #include <ArduinoJson.h>
 #include <stdio.h>
 #include "secrets.h"
+// METRICS_BEGIN include
+#include "DeviceMetrics.h"
+// METRICS_END
 
 // ==============================================================
 // 1. CẤU HÌNH WI-FI & MQTT BROKER
@@ -46,6 +49,9 @@ Servo servoVang;
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
+// METRICS_BEGIN instance
+DeviceMetrics deviceMetrics(mqttClient);
+// METRICS_END
 
 // Máy trạng thái hoạt động độc lập cho 3 trạm phân loại (Chạy song song)
 enum StationState {
@@ -187,6 +193,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   }
 
   colorStr.toUpperCase();
+  // METRICS_BEGIN camera
+  deviceMetrics.state.observeCamera(
+    colorStr.c_str(), !error && !doc["confidence"].isNull(),
+    !error && doc["confidence"].is<float>(),
+    (!error && doc["confidence"].is<float>()) ? doc["confidence"].as<float>() : -1.0,
+    DeviceMetrics::nowMs());
+  // METRICS_END
 
   // 2. Kích hoạt cờ ARMED cho trạm tương ứng
   if (colorStr.length() > 0) {
@@ -219,8 +232,14 @@ void reconnectMQTT() {
 
   Serial.print("[MQTT] Đang kết nối tới Broker Mosquitto...");
   String clientId = "ESP32_Sorting_Actuator_" + String(random(0xffff), HEX);
+  // METRICS_BEGIN mqtt_attempt
+  ++deviceMetrics.state.mqttConnectAttempts;
+  // METRICS_END
 
   if (mqttClient.connect(clientId.c_str())) {
+    // METRICS_BEGIN mqtt_connected
+    ++deviceMetrics.state.mqttConnections;
+    // METRICS_END
     Serial.println(" ✅ Đã kết nối!");
     
     // Báo cáo trạng thái Online của Actuator 3 Trạm
@@ -242,6 +261,9 @@ void reconnectMQTT() {
     Serial.println(MQTT_TOPIC_SERVO);
   } else {
     Serial.print(" ❌ Thất bại, mã lỗi rc=");
+    // METRICS_BEGIN mqtt_failed
+    ++deviceMetrics.state.mqttConnectFailures;
+    // METRICS_END
     Serial.print(mqttClient.state());
     Serial.println(" Sẽ tự thử lại...");
   }
@@ -325,6 +347,9 @@ void loop() {
   int ir4 = digitalRead(IR4_XANH_PIN);
   int ir5 = digitalRead(IR5_VANG_PIN);
   int ir6 = digitalRead(IR6_VANG_PIN);
+  // METRICS_BEGIN ir
+  deviceMetrics.observeInputs(ir1, ir2, ir3, ir4, ir5, ir6);
+  // METRICS_END
 
   // Màn hình Live Monitor kiểm tra tín hiệu cảm biến theo thời gian thực (Khi bấm 'm')
   if (liveMonitorMode && (millis() - lastMonitorPrint >= 400)) {
@@ -342,6 +367,9 @@ void loop() {
       servoRed.write(ANGLE_SORT);
       stateRed = STATE_SORTING_WAIT_DROP;
       timerRed = millis();
+      // METRICS_BEGIN red_start
+      deviceMetrics.state.observeSortStart(monitoring::RED, DeviceMetrics::nowMs());
+      // METRICS_END
     }
   }
   lastIr1 = ir1;
@@ -350,10 +378,16 @@ void loop() {
     if (millis() - timerRed >= MIN_DROP_WAIT_MS && lastIr2 == HIGH && ir2 == LOW) {
       Serial.println("📥 [TRẠM 1 - ĐỎ] >>> Hộp rơi vào thùng: SERVO 1 THU VỀ 0°!\n");
       servoRed.write(ANGLE_HOME);
+      // METRICS_BEGIN red_bin
+      deviceMetrics.state.observeHome(monitoring::RED, monitoring::BIN_SENSOR, DeviceMetrics::nowMs());
+      // METRICS_END
       stateRed = STATE_IDLE;
     } else if (millis() - timerRed >= TIMEOUT_MS) {
       Serial.println("🚨 [TRẠM 1] Hết 5s an toàn -> Tự thu Servo 1 về 0°!\n");
       servoRed.write(ANGLE_HOME);
+      // METRICS_BEGIN red_timeout
+      deviceMetrics.state.observeHome(monitoring::RED, monitoring::TIMEOUT, DeviceMetrics::nowMs());
+      // METRICS_END
       stateRed = STATE_IDLE;
     }
   }
@@ -368,6 +402,9 @@ void loop() {
       servoXanh.write(ANGLE_SORT);
       stateXanh = STATE_SORTING_WAIT_DROP;
       timerXanh = millis();
+      // METRICS_BEGIN blue_start
+      deviceMetrics.state.observeSortStart(monitoring::BLUE, DeviceMetrics::nowMs());
+      // METRICS_END
     }
   }
   lastIr3 = ir3;
@@ -376,10 +413,16 @@ void loop() {
     if (millis() - timerXanh >= MIN_DROP_WAIT_MS && lastIr4 == HIGH && ir4 == LOW) {
       Serial.println("📥 [TRẠM 2 - XANH] >>> Hộp rơi vào thùng: SERVO 2 THU VỀ 0°!\n");
       servoXanh.write(ANGLE_HOME);
+      // METRICS_BEGIN blue_bin
+      deviceMetrics.state.observeHome(monitoring::BLUE, monitoring::BIN_SENSOR, DeviceMetrics::nowMs());
+      // METRICS_END
       stateXanh = STATE_IDLE;
     } else if (millis() - timerXanh >= TIMEOUT_MS) {
       Serial.println("🚨 [TRẠM 2] Hết 5s an toàn -> Tự thu Servo 2 về 0°!\n");
       servoXanh.write(ANGLE_HOME);
+      // METRICS_BEGIN blue_timeout
+      deviceMetrics.state.observeHome(monitoring::BLUE, monitoring::TIMEOUT, DeviceMetrics::nowMs());
+      // METRICS_END
       stateXanh = STATE_IDLE;
     }
   }
@@ -394,6 +437,9 @@ void loop() {
       servoVang.write(ANGLE_SORT);
       stateVang = STATE_SORTING_WAIT_DROP;
       timerVang = millis();
+      // METRICS_BEGIN yellow_start
+      deviceMetrics.state.observeSortStart(monitoring::YELLOW, DeviceMetrics::nowMs());
+      // METRICS_END
     }
   }
   lastIr5 = ir5;
@@ -402,10 +448,16 @@ void loop() {
     if (millis() - timerVang >= MIN_DROP_WAIT_MS && lastIr6 == HIGH && ir6 == LOW) {
       Serial.println("📥 [TRẠM 3 - VÀNG] >>> Hộp rơi vào thùng: SERVO 3 THU VỀ 0°!\n");
       servoVang.write(ANGLE_HOME);
+      // METRICS_BEGIN yellow_bin
+      deviceMetrics.state.observeHome(monitoring::YELLOW, monitoring::BIN_SENSOR, DeviceMetrics::nowMs());
+      // METRICS_END
       stateVang = STATE_IDLE;
     } else if (millis() - timerVang >= TIMEOUT_MS) {
       Serial.println("🚨 [TRẠM 3] Hết 5s an toàn -> Tự thu Servo 3 về 0°!\n");
       servoVang.write(ANGLE_HOME);
+      // METRICS_BEGIN yellow_timeout
+      deviceMetrics.state.observeHome(monitoring::YELLOW, monitoring::TIMEOUT, DeviceMetrics::nowMs());
+      // METRICS_END
       stateVang = STATE_IDLE;
     }
   }
@@ -462,8 +514,18 @@ void loop() {
         servoRed.write(ANGLE_HOME);
         servoXanh.write(ANGLE_HOME);
         servoVang.write(ANGLE_HOME);
+        // METRICS_BEGIN emergency
+        deviceMetrics.state.observeHome(monitoring::RED, monitoring::EMERGENCY, DeviceMetrics::nowMs());
+        deviceMetrics.state.observeHome(monitoring::BLUE, monitoring::EMERGENCY, DeviceMetrics::nowMs());
+        deviceMetrics.state.observeHome(monitoring::YELLOW, monitoring::EMERGENCY, DeviceMetrics::nowMs());
+        // METRICS_END
         Serial.println("🛑 [DỪNG KHẨN CẤP] Cả 3 Servo về góc 0°!\n");
         break;
     }
   }
+  // METRICS_BEGIN publish
+  deviceMetrics.publishIfDue(
+    stateRed, stateXanh, stateVang, servoRed, servoXanh, servoVang,
+    ir1, ir2, ir3, ir4, ir5, ir6, autoTestMode, liveMonitorMode);
+  // METRICS_END
 }
