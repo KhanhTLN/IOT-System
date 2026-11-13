@@ -98,6 +98,7 @@ def main():
     print("PASS: independent station counters, IR edges, timeout/bin/emergency, camera confidence")
     print("PASS: 64-bit time, bounded JSON, streaming MQTT success/failures")
     print("PASS: adapter schedule, offline skip, snapshots, send failure and recovery with read-only fakes")
+    print("PASS: metrics headers compile with the ArduinoJson legacy-name macro guard enabled")
     print(f"PASS: {len(flat)} metrics match the exporter mapping")
     print(f"Largest tested payload: {max(len(line) for line in result.stdout.splitlines())} bytes")
 

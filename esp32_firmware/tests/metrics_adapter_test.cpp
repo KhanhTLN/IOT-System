@@ -1,4 +1,8 @@
+// ArduinoJson 7 defines this legacy-name error macro before DeviceMetrics.h in main.ino.
+// Reproduce that include-order conflict without requiring Arduino libraries on the host.
+#define JsonBuffer _Pragma("GCC error \"ArduinoJson legacy JsonBuffer macro collision\"")
 #include "../main/DeviceMetrics.h"
+#undef JsonBuffer
 #include <assert.h>
 #include <iostream>
 

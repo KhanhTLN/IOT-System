@@ -45,9 +45,10 @@ struct Snapshot {
 };
 
 // Fixed storage; JSON keys are constants, never taken from a received command.
-class JsonBuffer {
+// Avoid ArduinoJson's legacy-name macros, which also expand inside namespaces.
+class MetricsJsonWriter {
  public:
-  JsonBuffer(char* destination, size_t capacity) : data(destination), size(capacity) {}
+  MetricsJsonWriter(char* destination, size_t capacity) : data(destination), size(capacity) {}
 
   void append(const char* format, ...) {
     if (!valid) return;
@@ -150,7 +151,7 @@ struct MetricsState {
 
   int formatPayload(char* buffer, size_t capacity, const Snapshot& sample) const {
     if (capacity == 0) return -1;
-    JsonBuffer out(buffer, capacity);
+    MetricsJsonWriter out(buffer, capacity);
     out.append("{");
     out.integer("schema_version", 1, true);
     out.integer("uptime_seconds", sample.uptimeMs / 1000ULL);
