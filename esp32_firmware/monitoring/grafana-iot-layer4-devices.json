@@ -1,0 +1,1877 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "description": "Nguồn Prometheus đang scrape mqtt2prometheus.",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.4.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "text",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "timeseries",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "state-timeline",
+      "name": "state-timeline",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "table",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "iot-l4-device-ops",
+  "title": "IoT / Device Operations · Layer 4",
+  "description": "Device observability cho ESP32, 3 trạm servo + 6 IR và luồng Camera Edge. Dựa trên 66 metrics firmware; không tuyên bố chứng nhận kiến trúc hay độ chính xác AI.",
+  "tags": [
+    "iot",
+    "layer4",
+    "esp32",
+    "servo",
+    "camera-edge",
+    "mqtt",
+    "operations"
+  ],
+  "timezone": "Asia/Bangkok",
+  "style": "dark",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "liveNow": false,
+  "fiscalYearStartMonth": 0,
+  "weekStart": "monday",
+  "links": [],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ],
+    "time_options": [
+      5,
+      15,
+      30,
+      60,
+      180,
+      360,
+      720,
+      1440
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "#6ED0E0",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "label": "Collector job",
+        "description": "Chọn job đang scrape exporter telemetry.",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(esp32_uptime_seconds, job)",
+        "query": {
+          "query": "label_values(esp32_uptime_seconds, job)",
+          "refId": "VariableQuery_job"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "hide": 0,
+        "options": [],
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "skipUrlSync": false,
+        "regex": ""
+      },
+      {
+        "name": "instance",
+        "label": "Exporter",
+        "description": "Chọn đúng exporter để không gộp các bản sao dữ liệu.",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(esp32_uptime_seconds{job=~\"${job:regex}\"}, instance)",
+        "query": {
+          "query": "label_values(esp32_uptime_seconds{job=~\"${job:regex}\"}, instance)",
+          "refId": "VariableQuery_instance"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "hide": 0,
+        "options": [],
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "skipUrlSync": false,
+        "regex": ""
+      },
+      {
+        "name": "device",
+        "label": "ESP32",
+        "description": "Chọn một board; RED/BLUE/YELLOW là 3 trạm trên board này.",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}, sensor)",
+        "query": {
+          "query": "label_values(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}, sensor)",
+          "refId": "VariableQuery_device"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "hide": 0,
+        "options": [],
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "skipUrlSync": false,
+        "regex": ""
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## IOT / DEVICE OPERATIONS\n**LAYER 4 OBSERVABILITY** &nbsp; · &nbsp; ESP32 / **${device}** &nbsp; · &nbsp; 3 trạm servo &nbsp; · &nbsp; Camera Edge\n\nSensing → MQTT → Cloud monitoring &nbsp; | &nbsp; Dữ liệu thiết bị được lấy mẫu mỗi 5 giây; không có mẫu mới sau 30 giây sẽ hiện STALE."
+      }
+    },
+    {
+      "id": 2,
+      "title": "01 / EDGE · Liên kết & chế độ",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "description": "FRESH: telemetry không quá 30 giây. STALE: không có mẫu mới; chưa xác định lỗi ở board, mạng, MQTT hay exporter. SCRAPE là up của exporter, không phải up của ESP32. TEST/CAMERA là chế độ chạy hiện tại; TEST cũng tạo counters vận hành.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "((max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < bool 30)) or on() vector(0)",
+          "legendFormat": "TELEMETRY",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "min(up{job=~\"${job:regex}\",instance=~\"${instance:regex}\"})",
+          "legendFormat": "SCRAPE",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_auto_test_mode{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "MODE",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TELEMETRY"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "STALE",
+                        "color": "#F2495C",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "FRESH",
+                        "color": "#73BF69",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SCRAPE"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "DOWN",
+                        "color": "#F2495C",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "UP",
+                        "color": "#73BF69",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MODE"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "CAMERA",
+                        "color": "#6ED0E0",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "TEST",
+                        "color": "#FFCB7D",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 12,
+          "valueSize": 24
+        },
+        "showPercentChange": false
+      }
+    },
+    {
+      "id": 3,
+      "title": "ESP32 · Uptime & Wi-Fi",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "description": "Uptime tính từ boot, RSSI tại lúc gửi. Không suy ra CPU utilization hay độ trễ mạng. Màu RSSI là ngưỡng vận hành tham khảo: dưới -80 dBm đỏ, -80…-67 vàng, từ -67 xanh.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "UPTIME",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_wifi_rssi_dbm{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "WI-FI RSSI",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UPTIME"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dtdurations"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WI-FI RSSI"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dBm"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": -80
+                    },
+                    {
+                      "color": "green",
+                      "value": -67
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 12,
+          "valueSize": 24
+        },
+        "showPercentChange": false
+      }
+    },
+    {
+      "id": 4,
+      "title": "ESP32 · Bộ nhớ",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "description": "Heap hiện tại và mức thấp nhất kể từ boot, không phải RAM tổng. Cả hai giá trị cùng đơn vị byte; khoảng trống dữ liệu không được thay bằng 0. Ngưỡng heap tham khảo 20/50 kB, cần chỉnh theo board.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_free_heap_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "HEAP TRỐNG",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_min_free_heap_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "THẤP NHẤT / BOOT",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes",
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "HEAP TRỐNG"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20000
+                    },
+                    {
+                      "color": "green",
+                      "value": 50000
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 12,
+          "valueSize": 24
+        },
+        "showPercentChange": false
+      }
+    },
+    {
+      "id": 5,
+      "title": "03 / CAMERA EDGE · Bản tin gần nhất",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "description": "Confidence do Edge gửi, không phải accuracy. Ẩn confidence khi không có giá trị hợp lệ hoặc bản tin đã quá 30 giây. Tuổi bản tin dài có thể do không có sản phẩm. Màu là nhãn parser gốc nhận biết.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(((max(camera_edge_last_confidence{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) >= 0)) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)) and on() (max(camera_edge_last_message_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) <= 30)",
+          "legendFormat": "CONFIDENCE",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "((max(camera_edge_last_message_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) >= 0)) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "TUỔI BẢN TIN",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(camera_edge_last_color_code{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "NHÃN GẦN NHẤT",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CONFIDENCE"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 1
+              },
+              {
+                "id": "noValue",
+                "value": "Chưa có mẫu mới"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TUỔI BẢN TIN"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NHÃN GẦN NHẤT"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "UNKNOWN",
+                        "color": "#8E8E8E",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "RED",
+                        "color": "#F2495C",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "BLUE",
+                        "color": "#5794F2",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "YELLOW",
+                        "color": "#FFCB7D",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 12,
+          "valueSize": 22
+        },
+        "showPercentChange": false
+      }
+    },
+    {
+      "id": 6,
+      "title": "Luồng xử lý · Camera Edge → IR miệng thùng",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 14,
+        "h": 8
+      },
+      "description": "Đối chiếu tốc độ bản tin nhận và nhánh IR thùng thực thi. Hai tín hiệu có thể lệch thời gian; không dùng tỷ lệ của chúng làm accuracy/OEE. rate xử lý counter reset; cần ít nhất hai mẫu. Khoảng trống là thiếu mẫu, không được tự điền thành 0.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(camera_edge_messages_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__rate_interval])) * 60) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "Camera Edge · bản tin/phút",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(servo_red_bin_confirmations_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__rate_interval])) * 60) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "RED · IR thùng/phút",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(servo_blue_bin_confirmations_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__rate_interval])) * 60) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "BLUE · IR thùng/phút",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(servo_yellow_bin_confirmations_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__rate_interval])) * 60) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "YELLOW · IR thùng/phút",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "insertNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "suffix: /min",
+          "min": 0,
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RED · IR thùng/phút"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BLUE · IR thùng/phút"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "YELLOW · IR thùng/phút"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FFCB7D"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": []
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "02 / SERVO · Trạng thái 3 trạm",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 14,
+        "y": 8,
+        "w": 10,
+        "h": 8
+      },
+      "description": "State phần mềm: IDLE → ARMED → WAIT DROP. Lấy mẫu 5 giây có thể bỏ qua chuyển trạng thái ngắn. Không có mẫu mới thì để khoảng trống, không kéo dài trạng thái tốt qua lúc mất telemetry.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(servo_red_state{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "01 · RED",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(servo_blue_state{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "02 · BLUE",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(servo_yellow_state{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "03 · YELLOW",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "IDLE",
+                  "color": "#506171",
+                  "index": 0
+                },
+                "1": {
+                  "text": "ARMED",
+                  "color": "#5794F2",
+                  "index": 1
+                },
+                "2": {
+                  "text": "WAIT DROP",
+                  "color": "#FFCB7D",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 95,
+            "spanNulls": false,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "auto",
+        "alignValue": "left",
+        "rowHeight": 0.65,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Servo · Sổ vận hành 3 trạm",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 16,
+        "h": 7
+      },
+      "description": "State/góc/PWM là mẫu mới nhất ≤30s; cột Δ là increase trong khoảng thời gian đang chọn. Increase là ước lượng Prometheus có extrapolation và xử lý reset, được làm tròn khi hiển thị. PWM không chứng minh dây servo đã cắm; góc là lệnh, không đo từ trục. Gạt → home là thời gian quan sát, không phải tốc độ quay vật lý. Ô thiếu dữ liệu hiển thị —.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "label_replace(label_replace(((max(servo_red_state{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"Trạng thái\", \"\", \"\") or label_replace(label_replace(((max(servo_red_commanded_angle_degrees{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"Góc lệnh\", \"\", \"\") or label_replace(label_replace(((max(servo_red_pwm_attached{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"PWM\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_red_bin_confirmations_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"IR thùng / Δ\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_red_timeouts_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"Timeout / Δ\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_red_sort_retriggers_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"Gạt lại / Δ\", \"\", \"\") or label_replace(label_replace((((max(servo_red_last_sort_duration_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) >= 0)) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"01 · RED\", \"\", \"\"), \"metric\", \"Gạt → home\", \"\", \"\") or label_replace(label_replace(((max(servo_blue_state{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"Trạng thái\", \"\", \"\") or label_replace(label_replace(((max(servo_blue_commanded_angle_degrees{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"Góc lệnh\", \"\", \"\") or label_replace(label_replace(((max(servo_blue_pwm_attached{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"PWM\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_blue_bin_confirmations_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"IR thùng / Δ\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_blue_timeouts_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"Timeout / Δ\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_blue_sort_retriggers_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"Gạt lại / Δ\", \"\", \"\") or label_replace(label_replace((((max(servo_blue_last_sort_duration_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) >= 0)) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"02 · BLUE\", \"\", \"\"), \"metric\", \"Gạt → home\", \"\", \"\") or label_replace(label_replace(((max(servo_yellow_state{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"Trạng thái\", \"\", \"\") or label_replace(label_replace(((max(servo_yellow_commanded_angle_degrees{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"Góc lệnh\", \"\", \"\") or label_replace(label_replace(((max(servo_yellow_pwm_attached{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"PWM\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_yellow_bin_confirmations_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"IR thùng / Δ\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_yellow_timeouts_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"Timeout / Δ\", \"\", \"\") or label_replace(label_replace((sum(increase(servo_yellow_sort_retriggers_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"Gạt lại / Δ\", \"\", \"\") or label_replace(label_replace((((max(servo_yellow_last_sort_duration_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) >= 0)) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)), \"station\", \"03 · YELLOW\", \"\", \"\"), \"metric\", \"Gạt → home\", \"\", \"\")",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "—",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0,
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Trạm"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 125
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Trạng thái"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "IDLE",
+                        "color": "#8E9BA8",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "ARMED",
+                        "color": "#5794F2",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "WAIT DROP",
+                        "color": "#FFCB7D",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Góc lệnh"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "degree"
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PWM"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "OFF",
+                        "color": "#F2495C",
+                        "index": 0
+                      },
+                      "1": {
+                        "text": "ON",
+                        "color": "#73BF69",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gạt → home"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timeout / Δ"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gạt lại / Δ"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "lg",
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "metric",
+            "rowField": "station",
+            "valueField": "Value",
+            "emptyValue": "null"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "station\\metric": 0,
+              "Trạng thái": 1,
+              "Góc lệnh": 2,
+              "PWM": 3,
+              "IR thùng / Δ": 4,
+              "Timeout / Δ": 5,
+              "Gạt lại / Δ": 6,
+              "Gạt → home": 7
+            },
+            "renameByName": {
+              "station\\metric": "Trạm"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Trạm",
+                "desc": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Cảm biến IR · 6 điểm quan sát",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 16,
+        "w": 8,
+        "h": 7
+      },
+      "description": "LOW = CHẮN, HIGH = THÔNG. Đây là giá trị lấy mẫu, không phải chẩn đoán sensor lỗi. Một xung ngắn hơn 5 giây có thể không hiện trên panel; counters IR vẫn ghi nhận theo vòng lặp firmware.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_ir1_blocked{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "IR1 · RED / Đón",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_ir2_blocked{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "IR2 · RED / Thùng",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_ir3_blocked{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "IR3 · BLUE / Đón",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_ir4_blocked{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "IR4 · BLUE / Thùng",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_ir5_blocked{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "IR5 · YELLOW / Đón",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(max(esp32_ir6_blocked{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)",
+          "legendFormat": "IR6 · YELLOW / Thùng",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "THÔNG",
+                  "color": "#8E9BA8",
+                  "index": 0
+                },
+                "1": {
+                  "text": "CHẮN",
+                  "color": "#FFCB7D",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 18
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Camera Edge · Confidence bản tin nhận được",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 14,
+        "h": 8
+      },
+      "description": "Giá trị confidence 0..1 do Edge gửi, bao gồm lệnh test publish thủ công. Không đo FPS/accuracy hay trạng thái webcam. Giá trị -1 bị loại, 0 được giữ; chỉ hiển thị bản tin ≤30s và telemetry còn mới. Khoảng trống cũng có thể là không có sản phẩm; không kết luận camera offline.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(((max(camera_edge_last_confidence{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) >= 0)) and on() (max(time() - timestamp(esp32_uptime_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"})) < 30)) and on() (max(camera_edge_last_message_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}) <= 30)",
+          "legendFormat": "Confidence nhận được",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#6ED0E0"
+          },
+          "mappings": [],
+          "noValue": "Không có dữ liệu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": false,
+            "insertNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": []
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Sự kiện cần xem xét · Khoảng thời gian chọn",
+      "type": "stat",
+      "gridPos": {
+        "x": 14,
+        "y": 23,
+        "w": 10,
+        "h": 8
+      },
+      "description": "Số sự kiện ước lượng bằng increase trong toàn khoảng chọn, gồm dữ liệu lịch sử cả khi thiết bị hiện mất telemetry. Không điền 0 khi thiếu series. Giá trị cần ít nhất hai mẫu. Home khẩn là lệnh Serial 0 đã được thực thi, không tự kết luận lỗi cơ khí. Mỗi lần Serial 0 phát home cho cả 3 trạm nên tổng home khẩn tăng 3.",
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(esp32_mqtt_connect_failures_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))",
+          "legendFormat": "MQTT · Kết nối lỗi",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(esp32_telemetry_publish_failures_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))",
+          "legendFormat": "Telemetry · Gửi lỗi",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(camera_edge_unrecognized_colors_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))",
+          "legendFormat": "Edge · Nhãn không nhận biết",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(camera_edge_invalid_confidence_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))",
+          "legendFormat": "Edge · Confidence không hợp lệ",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(servo_red_emergency_home_commands_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range])) + sum(increase(servo_blue_emergency_home_commands_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range])) + sum(increase(servo_yellow_emergency_home_commands_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",sensor=~\"${device:regex}\"}[$__range]))",
+          "legendFormat": "Servo · Lệnh home khẩn / trạm",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "exemplar": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "Thiếu mẫu",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 12,
+          "valueSize": 24
+        }
+      }
+    }
+  ]
+}

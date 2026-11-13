@@ -6,6 +6,55 @@ Firmware gửi 66 trường số trong JSON, mỗi 5 giây khi MQTT đang kết 
 factory/esp32/esp32_01/telemetry
 ```
 
+## Dashboard Grafana có sẵn
+
+Import file **[grafana-iot-layer4-devices.json](grafana-iot-layer4-devices.json)**:
+
+1. Trong Grafana chọn **Dashboards → New → Import → Upload dashboard JSON file**.
+2. Chọn file trên, chọn nguồn **Prometheus** đang scrape `mqtt2prometheus`, rồi Import.
+3. Chọn `Collector job`, `Exporter` và `ESP32` ở đầu dashboard. Bộ lọc tách từng
+   exporter/board để tránh gộp nhầm counters. Nên dùng giao diện Grafana Dark.
+
+Dashboard dùng Classic JSON và các panel có sẵn của Grafana, không yêu cầu plugin
+ngoài; thiết kế cho Grafana 10.4+ nhưng chưa được kiểm tra render trên mọi phiên bản.
+Gồm **10 panel dữ liệu + 1 header**, mặc định xem 1 giờ, refresh 5 giây:
+
+- Tổng quan freshness, scrape exporter, chế độ test/camera, uptime, RSSI và heap.
+- Luồng bản tin so với IR thùng, timeline trạm, bảng 3 servo và 6 IR.
+- Confidence Camera Edge gần nhất và sự kiện MQTT/telemetry/nhãn/confidence/home khẩn.
+
+Panel hiện tại ẩn các mẫu cũ quá 30 giây. Khi confidence = -1 hoặc bản tin Edge
+quá 30 giây thì để trống; confidence = 0 vẫn được giữ. Trạng thái STALE không kết
+luận vị trí lỗi; SCRAPE UP chỉ chứng minh Prometheus scrape được exporter.
+Không có OEE, accuracy, FPS hay góc servo đo thực tế vì firmware chưa đo các chỉ số đó.
+
+Bảng servo có cột Δ và panel sự kiện dùng `increase` trong khoảng thời gian chọn;
+đó là số ước lượng có xử lý counter reset, có thể có số lẻ do extrapolation rồi được
+làm tròn khi hiển thị. Dữ liệu lịch sử vẫn có thể xuất hiện khi trạng thái hiện tại
+đã STALE. Tổng home khẩn đếm lệnh cho từng trạm: một lần Serial `0` thường tăng 3.
+
+Màu đỏ/xanh/vàng phân biệt trạm, cyan cho luồng Edge. Ngưỡng màu RSSI và heap chỉ
+là ngưỡng hiển thị tham khảo trong field overrides, cần chỉnh theo board/môi trường;
+không có alert rule tự gửi thông báo hay tự điều khiển thiết bị.
+Dashboard thể hiện chuỗi quan sát Edge → MQTT → Cloud, không phải chứng nhận IoT Level 4.
+
+Điều kiện dữ liệu: exporter phải dùng đúng mapping bên dưới, giữ timestamp nhận mẫu,
+cache timeout 30 giây; Prometheus scrape khoảng 5 giây, Grafana dùng đúng scrape interval
+trong cấu hình data source để `$__rate_interval` hoạt động. Nếu các dropdown trống,
+kiểm tra `esp32_uptime_seconds` và label `sensor` trong Prometheus trước.
+
+Có thể tái tạo JSON bằng `python esp32_firmware/monitoring/build_grafana_dashboard.py`.
+Kiểm tra cấu trúc/mapping bằng `python esp32_firmware/tests/test_grafana_dashboard.py`.
+Đã kiểm tra cú pháp 30 truy vấn và 13 tình huống freshness/confidence/reset/bảng trạm
+bằng `promtool` thực tế (container chỉ kiểm thử, không thay đổi dịch vụ đang chạy):
+
+```powershell
+python esp32_firmware/tests/test_grafana_dashboard.py --promtool-image prom/prometheus:v3.5.0
+```
+
+Tham khảo cách [import JSON của Grafana](https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/import-dashboards/)
+và ngữ nghĩa [rate/increase/timestamp của Prometheus](https://prometheus.io/docs/prometheus/latest/querying/functions/).
+
 ## Phạm vi thay đổi
 
 `main.ino` chỉ được thêm 18 khối đánh dấu `METRICS_BEGIN` / `METRICS_END`.
