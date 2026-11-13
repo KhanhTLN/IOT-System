@@ -29,6 +29,9 @@ FONT_RED = Font(name="Segoe UI", size=10, bold=True, color="BE123C")
 FILL_YELLOW = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")
 FONT_YELLOW = Font(name="Segoe UI", size=10, bold=True, color="B45309")
 
+FILL_BLUE = PatternFill(start_color="DBEAFE", end_color="DBEAFE", fill_type="solid")
+FONT_BLUE = Font(name="Segoe UI", size=10, bold=True, color="1D4ED8")
+
 FILL_GREEN = PatternFill(start_color="D1FAE5", end_color="D1FAE5", fill_type="solid")
 FONT_GREEN = Font(name="Segoe UI", size=10, bold=True, color="047857")
 
@@ -86,7 +89,7 @@ def generate_excel_report(
     if end_dt:
         query = query.filter(SortingLog.created_at <= end_dt)
     query = apply_shift_filter(query, shift)
-    if color_label and color_label.upper() in ["RED", "YELLOW", "GREEN"]:
+    if color_label and color_label.upper() in ["RED", "YELLOW", "BLUE", "GREEN"]:
         query = query.filter(SortingLog.color_label == color_label.upper())
 
     logs: List[SortingLog] = query.order_by(SortingLog.id.asc()).all()
@@ -158,7 +161,7 @@ def generate_excel_report(
     rows_s1 = [
         ("Khay Đỏ (RED)", "45°", counts.get("RED", 0), pcts.get("RED", 0.0), round(target_shift / 3), FILL_RED, FONT_RED),
         ("Khay Vàng (YELLOW)", "90°", counts.get("YELLOW", 0), pcts.get("YELLOW", 0.0), round(target_shift / 3), FILL_YELLOW, FONT_YELLOW),
-        ("Khay Xanh (GREEN)", "135°", counts.get("GREEN", 0), pcts.get("GREEN", 0.0), round(target_shift / 3), FILL_GREEN, FONT_GREEN),
+        ("Khay Xanh (BLUE)", "135°", counts.get("BLUE", counts.get("GREEN", 0)), pcts.get("BLUE", pcts.get("GREEN", 0.0)), round(target_shift / 3), FILL_GREEN, FONT_GREEN),
     ]
 
     for idx, (label, angle, count, pct, tgt, fill, font) in enumerate(rows_s1, start=7):
@@ -300,7 +303,7 @@ def generate_excel_report(
     rows_s3 = [
         ("Khay Đỏ (RED)", "45°", details_sv.get("RED", {}).get("cycles", 0), "10,000 chu kỳ", details_sv.get("RED", {}).get("wear_pct", 0.0), details_sv.get("RED", {}).get("status", "HEALTHY")),
         ("Khay Vàng (YELLOW)", "90°", details_sv.get("YELLOW", {}).get("cycles", 0), "10,000 chu kỳ", details_sv.get("YELLOW", {}).get("wear_pct", 0.0), details_sv.get("YELLOW", {}).get("status", "HEALTHY")),
-        ("Khay Xanh (GREEN)", "135°", details_sv.get("GREEN", {}).get("cycles", 0), "10,000 chu kỳ", details_sv.get("GREEN", {}).get("wear_pct", 0.0), details_sv.get("GREEN", {}).get("status", "HEALTHY")),
+        ("Khay Xanh (BLUE)", "135°", details_sv.get("BLUE", details_sv.get("GREEN", {})).get("cycles", 0), "10,000 chu kỳ", details_sv.get("BLUE", details_sv.get("GREEN", {})).get("wear_pct", 0.0), details_sv.get("BLUE", details_sv.get("GREEN", {})).get("status", "HEALTHY")),
     ]
 
     for idx, (label, angle, cyc, rated, wear, st_sv) in enumerate(rows_s3, start=21):
@@ -347,20 +350,21 @@ def generate_excel_report(
     ws_shifts["A3"] = "1. TỔNG HỢP SẢN LƯỢNG THEO 3 CA SẢN XUẤT"
     ws_shifts["A3"].font = Font(name="Segoe UI", size=11, bold=True, color=COLOR_NAVY_DARK)
 
-    headers_shift = ["Ca Sản Xuất", "Khung Giờ Hoạt Động", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh (GREEN)", "Tổng Ca (SP)"]
+    headers_shift = ["Ca Sản Xuất", "Khung Giờ Hoạt Động", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh dương (BLUE)", "Tổng Ca (SP)"]
     for col_idx, h in enumerate(headers_shift, start=1):
         cell = ws_shifts.cell(row=4, column=col_idx)
         style_header_cell(cell, h, fill_color=COLOR_NAVY_MED)
 
     # Gom nhóm theo Ca
     shift_counts = {
-        "SHIFT_1": {"RED": 0, "YELLOW": 0, "GREEN": 0},
-        "SHIFT_2": {"RED": 0, "YELLOW": 0, "GREEN": 0},
-        "SHIFT_3": {"RED": 0, "YELLOW": 0, "GREEN": 0}
+        "SHIFT_1": {"RED": 0, "YELLOW": 0, "BLUE": 0},
+        "SHIFT_2": {"RED": 0, "YELLOW": 0, "BLUE": 0},
+        "SHIFT_3": {"RED": 0, "YELLOW": 0, "BLUE": 0}
     }
     for log in logs:
         hr = log.created_at.hour
         lbl = log.color_label.upper()
+        if lbl == "GREEN": lbl = "BLUE"
         if 6 <= hr < 14:
             s_key = "SHIFT_1"
         elif 14 <= hr < 22:
@@ -371,9 +375,9 @@ def generate_excel_report(
             shift_counts[s_key][lbl] += 1
 
     shift_rows = [
-        ("Ca 1 (Sáng)", "06:00 - 14:00", shift_counts["SHIFT_1"]["RED"], shift_counts["SHIFT_1"]["YELLOW"], shift_counts["SHIFT_1"]["GREEN"]),
-        ("Ca 2 (Chiều)", "14:00 - 22:00", shift_counts["SHIFT_2"]["RED"], shift_counts["SHIFT_2"]["YELLOW"], shift_counts["SHIFT_2"]["GREEN"]),
-        ("Ca 3 (Đêm)", "22:00 - 06:00", shift_counts["SHIFT_3"]["RED"], shift_counts["SHIFT_3"]["YELLOW"], shift_counts["SHIFT_3"]["GREEN"]),
+        ("Ca 1 (Sáng)", "06:00 - 14:00", shift_counts["SHIFT_1"]["RED"], shift_counts["SHIFT_1"]["YELLOW"], shift_counts["SHIFT_1"]["BLUE"]),
+        ("Ca 2 (Chiều)", "14:00 - 22:00", shift_counts["SHIFT_2"]["RED"], shift_counts["SHIFT_2"]["YELLOW"], shift_counts["SHIFT_2"]["BLUE"]),
+        ("Ca 3 (Đêm)", "22:00 - 06:00", shift_counts["SHIFT_3"]["RED"], shift_counts["SHIFT_3"]["YELLOW"], shift_counts["SHIFT_3"]["BLUE"]),
     ]
 
     for idx, (s_name, s_time, r_c, y_c, g_c) in enumerate(shift_rows, start=5):
@@ -399,15 +403,16 @@ def generate_excel_report(
     ws_shifts["A9"] = "2. PHÂN BỔ SẢN LƯỢNG CHI TIẾT THEO 24 KHUNG GIỜ (00:00 - 23:00)"
     ws_shifts["A9"].font = Font(name="Segoe UI", size=11, bold=True, color=COLOR_NAVY_DARK)
 
-    headers_hr = ["Khung Giờ", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh (GREEN)", "Tổng Giờ (SP)", "Tỷ Lệ Giờ / Tổng Ca"]
+    headers_hr = ["Khung Giờ", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh dương (BLUE)", "Tổng Giờ (SP)", "Tỷ Lệ Giờ / Tổng Ca"]
     for col_idx, h in enumerate(headers_hr, start=1):
         cell = ws_shifts.cell(row=10, column=col_idx)
         style_header_cell(cell, h, fill_color=COLOR_NAVY_LIGHT)
 
-    hour_counts = {h: {"RED": 0, "YELLOW": 0, "GREEN": 0} for h in range(24)}
+    hour_counts = {h: {"RED": 0, "YELLOW": 0, "BLUE": 0} for h in range(24)}
     for log in logs:
         hr = log.created_at.hour
         lbl = log.color_label.upper()
+        if lbl == "GREEN": lbl = "BLUE"
         if lbl in hour_counts[hr]:
             hour_counts[hr][lbl] += 1
 
@@ -416,13 +421,13 @@ def generate_excel_report(
         h_str = f"{h:02d}:00 - {h:02d}:59"
         r_v = hour_counts[h]["RED"]
         y_v = hour_counts[h]["YELLOW"]
-        g_v = hour_counts[h]["GREEN"]
-        tot_h = r_v + y_v + g_v
+        b_v = hour_counts[h]["BLUE"]
+        tot_h = r_v + y_v + b_v
 
         ws_shifts.cell(row=row_h, column=1, value=h_str).alignment = Alignment(horizontal="center")
         ws_shifts.cell(row=row_h, column=1).border = BORDER_CELL
 
-        for c_idx, val in enumerate([r_v, y_v, g_v], start=2):
+        for c_idx, val in enumerate([r_v, y_v, b_v], start=2):
             cell = ws_shifts.cell(row=row_h, column=c_idx, value=val)
             cell.number_format = "#,##0"
             cell.alignment = Alignment(horizontal="right")
@@ -460,7 +465,7 @@ def generate_excel_report(
         cell = ws_raw.cell(row=2, column=col_idx)
         style_header_cell(cell, h, fill_color=COLOR_NAVY_MED)
 
-    angle_map = {"RED": "45° (Khay Đỏ)", "YELLOW": "90° (Khay Vàng)", "GREEN": "135° (Khay Xanh)"}
+    angle_map = {"RED": "45° (Khay Đỏ)", "YELLOW": "90° (Khay Vàng)", "BLUE": "135° (Khay Xanh)", "GREEN": "135° (Khay Xanh)"}
 
     for idx, log in enumerate(logs, start=3):
         lbl = log.color_label.upper()
@@ -479,6 +484,9 @@ def generate_excel_report(
         elif lbl == "YELLOW":
             c_lbl.fill = FILL_YELLOW
             c_lbl.font = FONT_YELLOW
+        elif lbl == "BLUE":
+            c_lbl.fill = FILL_BLUE
+            c_lbl.font = FONT_BLUE
         elif lbl == "GREEN":
             c_lbl.fill = FILL_GREEN
             c_lbl.font = FONT_GREEN

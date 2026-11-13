@@ -63,10 +63,13 @@ def render_manager_view():
     plotly_color_map = {
         "Đỏ (RED)": COLOR_PALETTE["RED"]["hex"],
         "Vàng (YELLOW)": COLOR_PALETTE["YELLOW"]["hex"],
-        "Xanh (GREEN)": COLOR_PALETTE["GREEN"]["hex"],
+        "Xanh dương (BLUE)": COLOR_PALETTE["BLUE"]["hex"],
+        "Xanh (BLUE)": COLOR_PALETTE["BLUE"]["hex"],
+        "BLUE": COLOR_PALETTE["BLUE"]["hex"],
+        "Xanh (GREEN)": COLOR_PALETTE["BLUE"]["hex"],
+        "GREEN": COLOR_PALETTE["BLUE"]["hex"],
         "RED": COLOR_PALETTE["RED"]["hex"],
         "YELLOW": COLOR_PALETTE["YELLOW"]["hex"],
-        "GREEN": COLOR_PALETTE["GREEN"]["hex"],
     }
 
     # --- HEADER ---
@@ -100,7 +103,7 @@ def render_manager_view():
         def render_realtime_tab_content():
             stats = fetch_stats()
             logs = fetch_logs(limit=50)
-            counts = stats.get("counts", {"RED": 0, "YELLOW": 0, "GREEN": 0})
+            counts = stats.get("counts", {"RED": 0, "YELLOW": 0, "BLUE": 0})
             total = stats.get("total_count", 0)
             speed = stats.get("productivity_per_minute", 0.0)
             anomaly = stats.get("anomaly_alert", "")
@@ -149,12 +152,13 @@ def render_manager_view():
                 """, unsafe_allow_html=True)
 
             with c4:
-                pct_grn = (counts.get('GREEN', 0) / total * 100) if total > 0 else 0
+                blue_c = counts.get('BLUE', counts.get('GREEN', 0))
+                pct_blue = (blue_c / total * 100) if total > 0 else 0
                 st.markdown(f"""
-                <div class="scada-kpi-card kpi-green">
-                    <div class="scada-kpi-title" style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh (135°)</div>
-                    <div class="scada-kpi-val" style="color: #34D399;">{counts.get('GREEN', 0):,}</div>
-                    <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #34D399; margin-left: 2px;">{pct_grn:.1f}%</strong></div>
+                <div class="scada-kpi-card kpi-blue">
+                    <div class="scada-kpi-title" style="color: #3B82F6;"><span class="led-dot led-blue"></span>Khay Xanh (BLUE)</div>
+                    <div class="scada-kpi-val" style="color: #3B82F6;">{blue_c:,}</div>
+                    <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #3B82F6; margin-left: 2px;">{pct_blue:.1f}%</strong></div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -180,10 +184,11 @@ def render_manager_view():
                     "Phân bố đồng đều theo kế hoạch đơn hàng (thường từ 25% - 40% mỗi màu nếu chia đều)."
                 )
                 if total > 0:
+                    blue_val = counts.get("BLUE", counts.get("GREEN", 0))
                     df_pie = pd.DataFrame([
                         {"Màu": "Đỏ (RED)", "Số lượng": counts.get("RED", 0)},
                         {"Màu": "Vàng (YELLOW)", "Số lượng": counts.get("YELLOW", 0)},
-                        {"Màu": "Xanh (GREEN)", "Số lượng": counts.get("GREEN", 0)}
+                        {"Màu": "Xanh dương (BLUE)", "Số lượng": blue_val}
                     ])
                     fig_pie = px.pie(
                         df_pie, names="Màu", values="Số lượng",
@@ -233,10 +238,11 @@ def render_manager_view():
                     "Đếm tổng số log phân loại thành công từ Camera Edge và vi điều khiển ESP32.",
                     "Các khay chứa không bị đầy tràn hoặc bỏ trống bất thường."
                 )
+                blue_val = counts.get("BLUE", counts.get("GREEN", 0))
                 df_bar = pd.DataFrame([
                     {"Màu": "Đỏ (RED)", "Số lượng": counts.get("RED", 0)},
                     {"Màu": "Vàng (YELLOW)", "Số lượng": counts.get("YELLOW", 0)},
-                    {"Màu": "Xanh (GREEN)", "Số lượng": counts.get("GREEN", 0)}
+                    {"Màu": "Xanh dương (BLUE)", "Số lượng": blue_val}
                 ])
                 fig_bar = px.bar(
                     df_bar, x="Màu", y="Số lượng", color="Màu",
@@ -327,12 +333,14 @@ def render_manager_view():
                 )
 
             with f_col3:
+                color_options = ["Tất cả màu", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh dương (BLUE)"]
+                curr_color = st.session_state.analytics_filter_applied.get("color", "Tất cả màu")
+                if curr_color not in color_options:
+                    curr_color = "Tất cả màu"
                 sel_color = st.selectbox(
                     "Phân loại màu sắc",
-                    ["Tất cả màu", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh lá (GREEN)"],
-                    index=["Tất cả màu", "Đỏ (RED)", "Vàng (YELLOW)", "Xanh lá (GREEN)"].index(
-                        st.session_state.analytics_filter_applied.get("color", "Tất cả màu")
-                    )
+                    color_options,
+                    index=color_options.index(curr_color)
                 )
 
             custom_start_time = None
@@ -382,7 +390,7 @@ def render_manager_view():
                 color_p = None
                 if "RED" in sel_color: color_p = "RED"
                 elif "YELLOW" in sel_color: color_p = "YELLOW"
-                elif "GREEN" in sel_color: color_p = "GREEN"
+                elif "BLUE" in sel_color or "GREEN" in sel_color: color_p = "BLUE"
 
                 st.session_state.analytics_filter_applied = {
                     "time_preset": sel_time_preset,
@@ -641,10 +649,12 @@ def render_manager_view():
 
                 with col_tgt_chart:
                     # So sánh Target vs Actual phân bổ từng màu
+                    blue_actual = color_targets.get("BLUE", color_targets.get("GREEN", {})).get("actual", 0)
+                    blue_target = color_targets.get("BLUE", color_targets.get("GREEN", {})).get("target", 0)
                     df_tgt = pd.DataFrame([
                         {"Màu": "Đỏ (RED)", "Thực tế": color_targets.get("RED", {}).get("actual", 0), "Mục tiêu": color_targets.get("RED", {}).get("target", 0)},
                         {"Màu": "Vàng (YELLOW)", "Thực tế": color_targets.get("YELLOW", {}).get("actual", 0), "Mục tiêu": color_targets.get("YELLOW", {}).get("target", 0)},
-                        {"Màu": "Xanh (GREEN)", "Thực tế": color_targets.get("GREEN", {}).get("actual", 0), "Mục tiêu": color_targets.get("GREEN", {}).get("target", 0)}
+                        {"Màu": "Xanh dương (BLUE)", "Thực tế": blue_actual, "Mục tiêu": blue_target}
                     ])
                     df_tgt_melt = df_tgt.melt(id_vars=["Màu"], value_vars=["Thực tế", "Mục tiêu"], var_name="Loại", value_name="Số lượng")
                     
@@ -765,7 +775,15 @@ def render_manager_view():
                     aggfunc='count', 
                     fill_value=0
                 )
-                for col_c in ["RED", "YELLOW", "GREEN"]:
+                # Hợp nhất nhãn GREEN (nếu có từ bản ghi cũ) vào BLUE
+                if 'GREEN' in df_pivot_trend.columns:
+                    if 'BLUE' not in df_pivot_trend.columns:
+                        df_pivot_trend['BLUE'] = df_pivot_trend['GREEN']
+                    else:
+                        df_pivot_trend['BLUE'] += df_pivot_trend['GREEN']
+                    df_pivot_trend.drop(columns=['GREEN'], inplace=True, errors='ignore')
+
+                for col_c in ["RED", "YELLOW", "BLUE"]:
                     if col_c not in df_pivot_trend.columns:
                         df_pivot_trend[col_c] = 0
                 df_pivot_trend = df_pivot_trend.sort_index()
@@ -784,7 +802,7 @@ def render_manager_view():
                 # Chuẩn bị DataFrame cho Line Chart
                 df_trend_melted = df_res.reset_index().melt(
                     id_vars=['time_display', 'dt_minute'],
-                    value_vars=[c for c in ['RED', 'YELLOW', 'GREEN'] if c in df_res.columns],
+                    value_vars=[c for c in ['RED', 'YELLOW', 'BLUE'] if c in df_res.columns],
                     var_name='color_label',
                     value_name='count'
                 )
@@ -833,7 +851,7 @@ def render_manager_view():
                     df_pivot_cum['time_display'] = df_pivot_cum.index.strftime(time_fmt)
                     df_cum = df_pivot_cum.reset_index().melt(
                         id_vars=['time_display', 'dt_minute'], 
-                        value_vars=[c for c in ['RED', 'YELLOW', 'GREEN'] if c in df_pivot_cum.columns],
+                        value_vars=[c for c in ['RED', 'YELLOW', 'BLUE'] if c in df_pivot_cum.columns],
                         var_name='color_label', 
                         value_name='cumulative_count'
                     )
@@ -908,7 +926,7 @@ def render_manager_view():
                     total_logs = len(df_time)
                     red_c = len(df_time[df_time['color_label'] == 'RED'])
                     yel_c = len(df_time[df_time['color_label'] == 'YELLOW'])
-                    grn_c = len(df_time[df_time['color_label'] == 'GREEN'])
+                    blue_c = len(df_time[df_time['color_label'].isin(['BLUE', 'GREEN'])])
                     first_log_time = df_time['dt'].min().strftime('%H:%M:%S - %d/%m/%Y')
                     last_log_time = df_time['dt'].max().strftime('%H:%M:%S - %d/%m/%Y')
 
@@ -932,8 +950,8 @@ def render_manager_view():
                             <strong>{yel_c} ({yel_c/total_logs*100:.1f}%)</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: #34D399;"><span class="led-dot led-green"></span>Xanh (GREEN):</span>
-                            <strong>{grn_c} ({grn_c/total_logs*100:.1f}%)</strong>
+                            <span style="color: #3B82F6;"><span class="led-dot led-blue"></span>Xanh dương (BLUE):</span>
+                            <strong>{blue_c} ({blue_c/total_logs*100:.1f}%)</strong>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -985,17 +1003,17 @@ def render_manager_view():
                     """, unsafe_allow_html=True)
                     st.progress(min(1.0, yel_sv.get('wear_pct', 0.0) / 100.0))
 
-                # Card Góc 135 độ (Xanh)
-                grn_sv = details.get("GREEN", {})
+                # Card Servo Xanh (BLUE)
+                blue_sv = details.get("BLUE", details.get("GREEN", {}))
                 with sv_col3:
                     st.markdown(f"""
-                    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 12px; padding: 14px;">
-                        <div style="color: #34D399; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;"><span class="led-dot led-green"></span>Khay Xanh — Góc 135°</div>
-                        <div style="font-size: 1.4rem; font-weight: 700; color: #F8FAFC;">{grn_sv.get('cycles', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">chu kỳ</span></div>
-                        <div style="color: #94A3B8; font-size: 0.78rem; margin: 4px 0 8px 0;">Mức hao mòn: <strong>{grn_sv.get('wear_pct', 0.0):.1f}%</strong></div>
+                    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 14px;">
+                        <div style="color: #3B82F6; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;"><span class="led-dot led-blue"></span>Khay Xanh — Góc 135°</div>
+                        <div style="font-size: 1.4rem; font-weight: 700; color: #F8FAFC;">{blue_sv.get('cycles', 0):,} <span style="font-size: 0.75rem; color: #94A3B8;">chu kỳ</span></div>
+                        <div style="color: #94A3B8; font-size: 0.78rem; margin: 4px 0 8px 0;">Mức hao mòn: <strong>{blue_sv.get('wear_pct', 0.0):.1f}%</strong></div>
                     </div>
                     """, unsafe_allow_html=True)
-                    st.progress(min(1.0, grn_sv.get('wear_pct', 0.0) / 100.0))
+                    st.progress(min(1.0, blue_sv.get('wear_pct', 0.0) / 100.0))
 
         render_analytics_display_content()
 
@@ -1096,7 +1114,7 @@ def render_manager_view():
                 )
                 angle_red = st.number_input("Góc xoay Servo - Khay Đỏ (°)", min_value=0, max_value=180, value=int(configs.get("servo_red_angle", 45)))
                 angle_yellow = st.number_input("Góc xoay Servo - Khay Vàng (°)", min_value=0, max_value=180, value=int(configs.get("servo_yellow_angle", 90)))
-                angle_green = st.number_input("Góc xoay Servo - Khay Xanh (°)", min_value=0, max_value=180, value=int(configs.get("servo_green_angle", 135)))
+                angle_blue = st.number_input("Góc xoay Servo - Khay Xanh (BLUE) (°)", min_value=0, max_value=180, value=int(configs.get("servo_blue_angle", configs.get("servo_green_angle", 135))))
 
                 save_btn = st.form_submit_button("Lưu Cấu Hình Vận Hành", use_container_width=True)
                 if save_btn:
@@ -1105,7 +1123,8 @@ def render_manager_view():
                     update_config_value("anomaly_threshold", threshold)
                     update_config_value("servo_red_angle", angle_red)
                     update_config_value("servo_yellow_angle", angle_yellow)
-                    update_config_value("servo_green_angle", angle_green)
+                    update_config_value("servo_blue_angle", angle_blue)
+                    update_config_value("servo_green_angle", angle_blue)
                     st.session_state.analytics_filter_applied["target_shift"] = target_shift_cfg
                     st.session_state.analytics_filter_applied["ideal_rate"] = ideal_rate_cfg
                     st.success("Đã cập nhật cấu hình hệ thống thành công!")

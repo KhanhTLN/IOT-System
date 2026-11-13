@@ -178,7 +178,7 @@ def create_sorting_log(log_data: SortingLogCreate, db: Session = Depends(get_db)
     """
     Endpoint nhận dữ liệu phân loại từ Edge Node / Mock Producer.
     """
-    valid_colors = ["RED", "YELLOW", "GREEN"]
+    valid_colors = ["RED", "YELLOW", "BLUE", "GREEN"]
     color_upper = log_data.color_label.upper()
     if color_upper not in valid_colors:
         raise HTTPException(
@@ -352,7 +352,7 @@ def export_logs_csv(
     if end_dt:
         query = query.filter(SortingLog.created_at <= end_dt)
     query = apply_shift_filter(query, shift)
-    if color_label and color_label.upper() in ["RED", "YELLOW", "GREEN"]:
+    if color_label and color_label.upper() in ["RED", "YELLOW", "BLUE", "GREEN"]:
         query = query.filter(SortingLog.color_label == color_label.upper())
 
     logs = query.order_by(SortingLog.id.asc()).all()
@@ -363,7 +363,7 @@ def export_logs_csv(
     writer = csv.writer(output)
     writer.writerow(["Mã Bản Ghi (ID)", "Nhãn Màu", "Góc Gạt Servo", "Độ Tin Cậy AI (%)", "Thời Gian Ghi Nhận (GMT+7)"])
     
-    angle_map = {"RED": "45°", "YELLOW": "90°", "GREEN": "135°"}
+    angle_map = {"RED": "45°", "YELLOW": "90°", "BLUE": "135°", "GREEN": "135°"}
     for log in logs:
         lbl = log.color_label.upper()
         writer.writerow([
@@ -427,7 +427,7 @@ def start_mqtt_consumer():
                 payload = json.loads(msg.payload.decode("utf-8"))
                 color = payload.get("color") or payload.get("color_label")
                 confidence = payload.get("confidence", 1.0)
-                if color and color.upper() in ["RED", "YELLOW", "GREEN"]:
+                if color and color.upper() in ["RED", "YELLOW", "BLUE", "GREEN"]:
                     db = SessionLocal()
                     new_log = SortingLog(color_label=color.upper(), confidence=float(confidence))
                     db.add(new_log)
