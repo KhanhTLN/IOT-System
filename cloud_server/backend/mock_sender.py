@@ -4,7 +4,7 @@ import requests
 import argparse
 
 API_URL = "http://localhost:8000/api/v1/logs"
-COLORS = ["RED", "YELLOW", "GREEN"]
+COLORS = ["RED", "YELLOW", "BLUE"]
 
 def send_single_log(color=None, confidence=None, api_url=API_URL):
     if not color:
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument("--url", type=str, default=API_URL, help="URL endpoint API FastAPI")
     parser.add_argument("--interval", type=float, default=2.0, help="Thời gian giãn cách giữa các lần gửi (giây)")
     parser.add_argument("--count", type=int, default=None, help="Số lượng log cần gửi (mặc định lặp vô tận)")
-    parser.add_argument("--color", type=str, default=None, help="Ép buộc gửi 1 màu duy nhất (RED, YELLOW, GREEN) để test cảnh báo bất thường")
+    parser.add_argument("--color", type=str, default=None, help="Ép buộc gửi 1 màu duy nhất (RED, YELLOW, BLUE) để test cảnh báo bất thường")
     
     args = parser.parse_args()
     run_simulation(interval=args.interval, count=args.count, force_color=args.color, api_url=args.url)

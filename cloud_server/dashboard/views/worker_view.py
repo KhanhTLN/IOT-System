@@ -42,7 +42,7 @@ def render_worker_view():
     def render_worker_realtime_data():
         stats = fetch_stats()
         logs = fetch_logs(limit=25)
-        counts = stats.get("counts", {"RED": 0, "YELLOW": 0, "GREEN": 0})
+        counts = stats.get("counts", {"RED": 0, "YELLOW": 0, "BLUE": 0})
         total = stats.get("total_count", 0)
         speed = stats.get("productivity_per_minute", 0.0)
         anomaly = stats.get("anomaly_alert", "")
@@ -92,12 +92,13 @@ def render_worker_view():
             """, unsafe_allow_html=True)
 
         with c4:
-            pct_grn = (counts.get('GREEN', 0) / total * 100) if total > 0 else 0
+            blue_c = counts.get('BLUE', counts.get('GREEN', 0))
+            pct_blue = (blue_c / total * 100) if total > 0 else 0
             st.markdown(f"""
-            <div class="scada-kpi-card kpi-green">
-                <div class="scada-kpi-title" style="color: #34D399;"><span class="led-dot led-green"></span>Khay Xanh (135°)</div>
-                <div class="scada-kpi-val" style="color: #34D399;">{counts.get('GREEN', 0):,}</div>
-                <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #34D399; margin-left: 2px;">{pct_grn:.1f}%</strong></div>
+            <div class="scada-kpi-card kpi-blue">
+                <div class="scada-kpi-title" style="color: #3B82F6;"><span class="led-dot led-blue"></span>Khay Xanh (BLUE)</div>
+                <div class="scada-kpi-val" style="color: #3B82F6;">{blue_c:,}</div>
+                <div class="scada-kpi-sub">Tỷ lệ: <strong style="color: #3B82F6; margin-left: 2px;">{pct_blue:.1f}%</strong></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -125,8 +126,8 @@ def render_worker_view():
                     return "ĐỎ (RED)"
                 elif val == "YELLOW":
                     return "VÀNG (YELLOW)"
-                elif val == "GREEN":
-                    return "XANH (GREEN)"
+                elif val in ["BLUE", "GREEN"]:
+                    return "XANH (BLUE)"
                 return val
 
             df['color_display'] = df['color_label'].apply(format_color_badge)

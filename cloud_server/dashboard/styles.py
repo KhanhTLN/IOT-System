@@ -26,6 +26,7 @@ def inject_custom_styles():
             /* Product Object Colors */
             --prod-red: #FB7185;
             --prod-yellow: #FBBF24;
+            --prod-blue: #3B82F6;
             --prod-green: #34D399;
             
             /* Technical System Status Colors */
@@ -128,7 +129,8 @@ def inject_custom_styles():
         .led-red { background-color: var(--prod-red); box-shadow: 0 0 8px var(--prod-red); }
         .led-yellow { background-color: var(--prod-yellow); box-shadow: 0 0 8px var(--prod-yellow); }
         .led-green { background-color: var(--prod-green); box-shadow: 0 0 8px var(--prod-green); }
-        .led-blue { background-color: var(--sys-cyan); box-shadow: 0 0 8px var(--sys-cyan); }
+        .led-blue { background-color: var(--prod-blue); box-shadow: 0 0 8px var(--prod-blue); }
+        .led-cyan { background-color: var(--sys-cyan); box-shadow: 0 0 8px var(--sys-cyan); }
         .led-gray { background-color: var(--scada-text-muted); }
 
         /* ==========================================================================
@@ -201,6 +203,7 @@ def inject_custom_styles():
         .kpi-total::before { background: linear-gradient(90deg, #38BDF8, #6366F1); }
         .kpi-red::before { background: linear-gradient(90deg, #F43F5E, #FB7185); }
         .kpi-yellow::before { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+        .kpi-blue::before { background: linear-gradient(90deg, #2563EB, #3B82F6); }
         .kpi-green::before { background: linear-gradient(90deg, #10B981, #34D399); }
         .kpi-speed::before { background: linear-gradient(90deg, #8B5CF6, #C084FC); }
         .kpi-oee::before { background: linear-gradient(90deg, #10B981, #38BDF8); }
@@ -276,6 +279,7 @@ def inject_custom_styles():
 
         .micro-bar-seg-red { background-color: var(--prod-red); }
         .micro-bar-seg-yellow { background-color: var(--prod-yellow); }
+        .micro-bar-seg-blue { background-color: var(--prod-blue); }
         .micro-bar-seg-green { background-color: var(--prod-green); }
 
         /* ==========================================================================
