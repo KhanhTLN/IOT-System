@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
 #include <ArduinoJson.h>
+#include <stdio.h>
 #include "secrets.h"
 
 // ==============================================================
