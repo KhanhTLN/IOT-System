@@ -13,6 +13,10 @@ DATABASE_URL = os.getenv(
     "sqlite:///./iot_sorting.db"
 )
 
+# Chuẩn hóa connection string cho PostgreSQL trên SQLAlchemy 2.0+
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # SQLite hoặc PostgreSQL Engine
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
