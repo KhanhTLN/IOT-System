@@ -2,7 +2,18 @@
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
 #include <ArduinoJson.h>
+#include <stdio.h>
 #include "secrets.h"
+
+// Telemetry cho MQTT2Prometheus. Giữ secrets.h cùng thư mục với main.ino.
+// Các trường JSON khớp với config.yaml đã hướng dẫn:
+// uptime_seconds -> esp32_uptime_seconds
+// wifi_rssi_dbm  -> esp32_wifi_rssi_dbm
+// free_heap_bytes -> esp32_free_heap_bytes
+// Gửi không retain để dữ liệu cũ không được phát lại như mẫu mới.
+const char* MQTT_TELEMETRY_TOPIC = "factory/esp32/esp32_01/telemetry";
+const unsigned long TELEMETRY_INTERVAL_MS = 5000;
+unsigned long lastTelemetryMs = 0;
 
 // ==========================================
 // 1. CẤU HÌNH WI-FI & MQTT BROKER
@@ -32,6 +43,43 @@ PubSubClient mqttClient(espClient);
 // Biến quản lý thời gian hồi vị không gây chặn chương trình (Non-blocking timer)
 unsigned long servoActionStartTime = 0;
 bool isServoActive = false;
+
+// ==========================================
+// TELEMETRY ESP32: UPTIME, WI-FI RSSI VÀ RAM HEAP
+// ==========================================
+bool publishTelemetry() {
+  if (!mqttClient.connected()) {
+    return false;
+  }
+
+  char payload[192];
+  int payloadLength = snprintf(
+    payload,
+    sizeof(payload),
+    "{\"uptime_seconds\":%lu,\"wifi_rssi_dbm\":%d,\"free_heap_bytes\":%lu}",
+    (unsigned long)(millis() / 1000UL),
+    (int)WiFi.RSSI(),
+    (unsigned long)ESP.getFreeHeap()
+  );
+
+  if (payloadLength < 0 || (size_t)payloadLength >= sizeof(payload)) {
+    Serial.println("[Telemetry] Loi: payload vuot kich thuoc buffer.");
+    return false;
+  }
+
+  // publish() trả true khi client gửi được gói tin, không phải ACK ứng dụng.
+  bool sent = mqttClient.publish(MQTT_TELEMETRY_TOPIC, payload, false);
+  if (sent) {
+    Serial.print("[Telemetry] ");
+    Serial.print(MQTT_TELEMETRY_TOPIC);
+    Serial.print(" -> ");
+    Serial.println(payload);
+  } else {
+    Serial.println("[Telemetry] Gui MQTT that bai, thu lai o chu ky tiep theo.");
+  }
+
+  return sent;
+}
 
 // ==========================================
 // 3. HÀM KẾT NỐI WI-FI
@@ -131,7 +179,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 // ==========================================
 void reconnectMQTT() {
   while (!mqttClient.connected()) {
-    Serial.print("[MQTT] Đang kết nối tới Broker HiveMQ...");
+    Serial.print("[MQTT] Đang kết nối tới Broker: ");
+    Serial.print(MQTT_BROKER);
+    Serial.print("...");
     String clientId = "ESP32_Sorting_Actuator_" + String(random(0xffff), HEX);
 
     if (mqttClient.connect(clientId.c_str())) {
@@ -154,6 +204,10 @@ void reconnectMQTT() {
       mqttClient.subscribe(MQTT_TOPIC_SERVO);
       Serial.print("[MQTT] Đã Subscribe Topic: ");
       Serial.println(MQTT_TOPIC_SERVO);
+
+      // Gửi mẫu đầu tiên ngay khi kết nối/reconnect thành công.
+      publishTelemetry();
+      lastTelemetryMs = millis();
     } else {
       Serial.print(" ❌ Thất bại, mã lỗi rc=");
       Serial.print(mqttClient.state());
@@ -203,6 +257,14 @@ void loop() {
     reconnectMQTT();
   }
   mqttClient.loop();
+
+  // Dùng millis() thay vì delay(5000), để MQTT và servo tiếp tục được xử lý.
+  unsigned long nowMs = millis();
+  if (mqttClient.connected() &&
+      (unsigned long)(nowMs - lastTelemetryMs) >= TELEMETRY_INTERVAL_MS) {
+    lastTelemetryMs = nowMs;
+    publishTelemetry();
+  }
 
   // Kiểm tra thời gian hồi vị Servo về 0 độ (Non-blocking)
   if (isServoActive && (millis() - servoActionStartTime >= SERVO_RESET_DELAY_MS)) {
